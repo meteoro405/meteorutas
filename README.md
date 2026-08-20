@@ -1,0 +1,56 @@
+# MeteoRutas
+
+Condiciones de niebla, hielo y temperaturas extremas en tiempo real sobre corredores viales argentinos. Parte del ecosistema Meteoro405 (junto a CAVOK y De Cuestas, Abras y Quebradas).
+
+Es una PWA sin build step: un único archivo HTML con JS vanilla y Leaflet. No requiere Node, npm, ni servidor — corre directo en GitHub Pages.
+
+## Qué usa
+
+- **Mapa**: [Argenmap del IGN](https://www.ign.gob.ar/AreaServicios/Argenmap/Introduccion) (Instituto Geográfico Nacional), vía Leaflet.
+- **Ruteo**: [OSRM](http://project-osrm.org/) (servidor demo público, gratis, sin API key).
+- **Clima**: [Open-Meteo](https://open-meteo.com/) (gratis, sin API key).
+- **Geocoding** (buscador Desde/Hasta): [Nominatim](https://nominatim.org/) (OpenStreetMap, gratis, sin API key).
+
+Ningún servicio requiere backend propio ni credenciales — todo se consulta directo desde el navegador del usuario.
+
+## Cómo publicarlo en GitHub Pages
+
+El archivo ya se llama `index.html`, así que queda listo para publicarse en la raíz del sitio sin renombrar nada.
+
+### Opción A — repositorio propio (recomendado)
+
+1. Creá un repositorio nuevo en GitHub, por ejemplo `meteorutas`.
+2. Subí el contenido de esta carpeta tal cual está:
+   ```
+   git init
+   git add .
+   git commit -m "MeteoRutas v1"
+   git branch -M main
+   git remote add origin https://github.com/TU-USUARIO/meteorutas.git
+   git push -u origin main
+   ```
+3. En GitHub: **Settings → Pages → Source → Deploy from a branch → main / (root)**.
+4. A los pocos minutos el sitio queda publicado en `https://TU-USUARIO.github.io/meteorutas/`.
+
+### Opción B — sumarlo a un repo existente
+
+Si preferís colgarlo de un repo que ya tenés en GitHub Pages en vez de crear uno nuevo, copiá `index.html` a una subcarpeta de ese repo (por ejemplo `/meteorutas/index.html`) y quedará accesible en:
+```
+https://TU-USUARIO.github.io/TU-REPO/meteorutas/
+```
+
+## Notas de despliegue
+
+- **Sin build**: no hay `package.json`, no hay paso de compilación. Lo que subís es lo que se sirve.
+- **CDNs externos**: el archivo carga Leaflet y las tipografías (Playfair Display, Source Sans 3, IBM Plex Mono) desde `cdnjs.cloudflare.com` y `fonts.googleapis.com`. Si en algún momento preferís servirlas localmente para evitar dependencias externas, avisame y lo armamos.
+- **OSRM demo server**: `router.project-osrm.org` es un servicio público compartido, no pensado para tráfico alto sostenido. Para uso personal/prototipo funciona bien; si en algún momento el proyecto crece, conviene migrar a un servidor OSRM propio o a OpenRouteService con API key.
+- **Rutas fijas incluidas**: RN3, RN5, RN7, RN8, RN9. El buscador "Desde / Hasta" permite calcular cualquier otro trayecto sobre la marcha, sin necesidad de agregarlo al código.
+- **Compartir por WhatsApp**: el link generado codifica el estado completo en el hash de la URL (`#route=rn9` para rutas fijas, `#route=custom&from=...&to=...` para búsquedas personalizadas), así que abrir un link compartido reconstruye exactamente la misma ruta, incluida una búsqueda Desde/Hasta.
+
+## Estructura
+
+```
+meteorutas-repo/
+├── index.html   ← la app completa
+└── README.md
+```

@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeteoRutas · Condiciones de Niebla en Tiempo Real · By Meteoro405</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pergamino: #f3e8d2;
+    --pergamino-2: #eadfc4;
+    --pergamino-deep: #e2d3ae;
+    --cuero-dark: #3c2413;
+    --cuero: #7a3a18;
+    --cuero-light: #a9714b;
+    --ink: #2b1d12;
+    --ink-dim: #6b5842;
+    --ink-faint: #9c8a6f;
+    --line: #d8c6a0;
+    --line-strong: #c2ab7c;
+    --risk-clear: #5c7a4e;
+    --risk-moderate: #c68a2e;
+    --risk-probable: #b25a2e;
+    --risk-dense: #8b2e2e;
+    --risk-unknown: #a79a82;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Source Sans 3', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--pergamino);
+    color: var(--ink);
+    font-family: var(--font-body);
+    height: 100%;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(122,58,24,0.05), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(122,58,24,0.04), transparent 45%);
+  }
+
+  /* ---------- HEADER ---------- */
+  header {
+    padding: 26px 32px 0;
+    border-bottom: 2px solid var(--cuero);
+    background: linear-gradient(180deg, var(--pergamino-2) 0%, var(--pergamino) 100%);
+  }
+
+  .brand-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--cuero);
+    margin: 10px 0 0;
+    font-weight: 600;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 25px;
+    letter-spacing: -0.005em;
+    color: var(--cuero-dark);
+    text-transform: uppercase;
+    line-height: 1.15;
+  }
+
+  .brand-by {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--ink-dim);
+    margin-top: 3px;
+  }
+
+  .share-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--pergamino);
+    background: var(--risk-clear);
+    border: none;
+    padding: 9px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.12s ease;
+    flex-shrink: 0;
+  }
+  .share-btn:hover { filter: brightness(1.1); }
+  .share-btn:active { transform: scale(0.97); }
+
+  .stats-row {
+    display: flex;
+    gap: 28px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-dim);
+  }
+
+  .stat b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- ROUTE TABS ---------- */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-top: 18px;
+    overflow-x: auto;
+    padding-bottom: 1px;
+  }
+  .tabs::-webkit-scrollbar { height: 5px; }
+
+  .custom-route-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .route-input {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line-strong);
+    background: var(--pergamino);
+    color: var(--ink);
+    min-width: 180px;
+    flex: 1 1 180px;
+    text-transform: uppercase;
+  }
+  .route-input::placeholder { color: var(--ink-faint); }
+  .route-input:focus { outline: none; border-color: var(--cuero); }
+
+  .route-input-arrow {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+
+  .search-route-btn {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: none;
+    background: var(--cuero);
+    color: var(--pergamino);
+    cursor: pointer;
+    transition: filter 0.12s ease;
+    flex-shrink: 0;
+  }
+  .search-route-btn:hover { filter: brightness(1.1); }
+  .search-route-btn:active { transform: scale(0.97); }
+
+  .tab.tab-custom {
+    border-bottom-color: var(--risk-clear);
+  }
+  .tab.tab-custom.active {
+    color: var(--cuero-dark);
+    border-bottom-color: var(--risk-clear);
+  }
+
+  .tab {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 9px 16px 11px;
+    color: var(--ink-faint);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    white-space: nowrap;
+    border-radius: 4px 4px 0 0;
+  }
+  .tab:hover { color: var(--cuero); background: rgba(122,58,24,0.06); }
+  .tab.active {
+    color: var(--cuero-dark);
+    border-bottom-color: var(--cuero);
+    background: var(--pergamino-deep);
+  }
+
+  /* ---------- ROUTE RIBBON (signature element) ---------- */
+  .ribbon-wrap {
+    padding: 18px 32px 22px;
+    border-bottom: 1px solid var(--line);
+    background: var(--pergamino-2);
+  }
+
+  .ribbon-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .layer-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .layer-btn {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--line-strong);
+    background: var(--pergamino);
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .layer-btn:hover { border-color: var(--cuero); color: var(--cuero-dark); }
+  .layer-btn.active {
+    background: var(--cuero);
+    border-color: var(--cuero);
+    color: var(--pergamino);
+  }
+
+  .ribbon {
+    display: flex;
+    height: 34px;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid var(--cuero-dark);
+    box-shadow: 0 1px 3px rgba(60,36,19,0.2) inset;
+  }
+
+  .ribbon-seg {
+    flex: 1;
+    cursor: pointer;
+    transition: transform 0.12s ease, filter 0.12s ease;
+    position: relative;
+    border-right: 1px solid rgba(60,36,19,0.35);
+    background: var(--risk-unknown);
+  }
+  .ribbon-seg:last-child { border-right: none; }
+
+  .ribbon-seg:hover, .ribbon-seg.active {
+    filter: brightness(1.18) saturate(1.15);
+    transform: scaleY(1.15);
+    z-index: 2;
+  }
+
+  .ribbon-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- MAIN LAYOUT ---------- */
+  .main {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  #map {
+    flex: 1;
+    background: var(--pergamino-2);
+  }
+  #map .leaflet-control-zoom a {
+    background: var(--pergamino) !important;
+    color: var(--cuero-dark) !important;
+    border-color: var(--line-strong) !important;
+  }
+
+  aside {
+    width: 340px;
+    border-left: 2px solid var(--cuero);
+    background: var(--pergamino-2);
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .point-item {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+  .point-item:hover, .point-item.active {
+    background: var(--pergamino-deep);
+  }
+
+  .point-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+    gap: 8px;
+  }
+
+  .badge-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  .point-idx {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+
+  .risk-badge {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 100px;
+    letter-spacing: 0.02em;
+  }
+
+  .point-detail {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 10px;
+  }
+
+  .point-detail span b { color: var(--ink); font-weight: 600; }
+
+  .waypoint-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--cuero-dark);
+    background: rgba(122,58,24,0.12);
+    border: 1px solid rgba(122,58,24,0.3);
+    border-radius: 100px;
+    padding: 1px 7px;
+    margin-left: 6px;
+    font-weight: 600;
+  }
+
+  /* ---------- LOADING / STATUS ---------- */
+  .status-bar {
+    padding: 10px 32px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--cuero-dark);
+    background: rgba(122,58,24,0.1);
+    border-bottom: 1px solid var(--line);
+    display: none;
+    font-weight: 600;
+  }
+  .status-bar.visible { display: block; }
+  .status-bar.error { color: var(--risk-dense); background: rgba(139,46,46,0.1); }
+
+  /* Leaflet marker popup theming */
+  .leaflet-popup-content-wrapper {
+    background: var(--pergamino);
+    color: var(--ink);
+    border-radius: 6px;
+    font-family: var(--font-body);
+    border: 1px solid var(--line-strong);
+  }
+  .leaflet-popup-tip { background: var(--pergamino); }
+  .popup-title { font-family: var(--font-mono); font-size: 12px; color: var(--cuero); margin-bottom: 4px; font-weight: 600; }
+  .popup-risk { font-weight: 700; margin-bottom: 6px; font-family: var(--font-display); }
+  .popup-detail { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-dim); line-height: 1.6; }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--pergamino-2); }
+  ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+
+  @media (max-width: 760px) {
+    .main { flex-direction: column; }
+    aside { width: 100%; max-height: 40vh; border-left: none; border-top: 2px solid var(--cuero); }
+    header, .ribbon-wrap { padding-left: 18px; padding-right: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-row">
+    <h1>CONDICIONES DE NIEBLA EN TIEMPO REAL <span class="brand-by">By Meteoro405</span></h1>
+    <button id="share-btn" class="share-btn" title="Enviar esta ruta por WhatsApp">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1s-.8 1-.9 1.2c-.2.2-.3.2-.6.1s-1.4-.5-2.6-1.6c-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.3 0-.5s-.7-1.7-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.3 4.7.7.3 1.3.5 1.8.7.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.4 5.1L2 22l5.1-1.3c1.4.8 3.1 1.2 4.9 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18.2c-1.6 0-3.1-.4-4.5-1.2l-.3-.2-3.3.9.9-3.2-.2-.3C3.8 14.7 3.3 13.4 3.3 12c0-4.8 3.9-8.7 8.7-8.7s8.7 3.9 8.7 8.7-3.9 8.7-8.7 8.7z"/></svg>
+      <span>Compartir</span>
+    </button>
+  </div>
+  <div class="eyebrow" id="route-subtitle">Seleccioná un corredor</div>
+  <div class="stats-row">
+    <div class="stat">Distancia: <b id="stat-distance">—</b></div>
+    <div class="stat">Puntos de muestreo: <b>20</b></div>
+    <div class="stat">Fuente clima: <b>Open-Meteo</b></div>
+    <div class="stat">Fuente ruta: <b>OSRM</b></div>
+  </div>
+  <div class="custom-route-bar">
+    <input type="text" id="input-desde" class="route-input" placeholder="Desde…" autocomplete="off">
+    <span class="route-input-arrow">→</span>
+    <input type="text" id="input-hasta" class="route-input" placeholder="Hasta…" autocomplete="off">
+    <button id="search-route-btn" class="search-route-btn">Buscar ruta</button>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<div id="status" class="status-bar"></div>
+
+<div class="ribbon-wrap">
+  <div class="layer-toggle" id="layer-toggle">
+    <button class="layer-btn active" data-layer="fog">🌫️ Niebla</button>
+    <button class="layer-btn" data-layer="ice">🧊 Hielo</button>
+    <button class="layer-btn" data-layer="temp">🌡️ Temp. extrema</button>
+  </div>
+  <div class="ribbon-label" id="ribbon-label">Riesgo de niebla a lo largo del trayecto</div>
+  <div class="ribbon" id="ribbon"></div>
+  <div class="ribbon-ticks">
+    <span id="tick-origin">Origen</span>
+    <span id="tick-dest">Destino</span>
+  </div>
+</div>
+
+<div class="main">
+  <div id="map"></div>
+  <aside id="point-list"></aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+const N_POINTS = 20;
+
+// Each route is a sequence of waypoints for OSRM (origin -> via points -> destination).
+// Via points force the routing engine through cities/corridors that the shortest-path
+// heuristic might otherwise bypass (e.g. RN9 through Córdoba capital).
+const ROUTES = [
+  {
+    id: 'rn9',
+    number: 'RN9',
+    label: 'Buenos Aires ⇄ La Quiaca',
+    waypoints: [
+      { name: 'Buenos Aires', lat: -34.6037, lon: -58.3816 },
+      { name: 'Córdoba',      lat: -31.4201, lon: -64.1888 },
+      { name: 'La Quiaca',    lat: -22.1061, lon: -65.5975 },
+    ]
+  },
+  {
+    id: 'rn5',
+    number: 'RN5',
+    label: 'Buenos Aires ⇄ Santa Rosa',
+    waypoints: [
+      { name: 'Buenos Aires', lat: -34.6037, lon: -58.3816 },
+      { name: 'Santa Rosa',   lat: -36.6167, lon: -64.2833 },
+    ]
+  },
+  {
+    id: 'rn7',
+    number: 'RN7',
+    label: 'Buenos Aires ⇄ Mendoza',
+    waypoints: [
+      { name: 'Buenos Aires', lat: -34.6037, lon: -58.3816 },
+      { name: 'Junín',        lat: -34.5836, lon: -60.9720 },
+      { name: 'Mendoza',      lat: -32.8908, lon: -68.8272 },
+    ]
+  },
+  {
+    id: 'rn8',
+    number: 'RN8',
+    label: 'Buenos Aires ⇄ Villa Mercedes',
+    waypoints: [
+      { name: 'Buenos Aires',   lat: -34.6037, lon: -58.3816 },
+      { name: 'Villa Mercedes', lat: -33.6791, lon: -65.4551 },
+    ]
+  },
+  {
+    id: 'rn3',
+    number: 'RN3',
+    label: 'Buenos Aires ⇄ Ushuaia',
+    waypoints: [
+      { name: 'Buenos Aires',        lat: -34.6037, lon: -58.3816 },
+      { name: 'Comodoro Rivadavia',  lat: -45.8641, lon: -67.4966 },
+      { name: 'Río Gallegos',        lat: -51.6230, lon: -69.2168 },
+      { name: 'Ushuaia',             lat: -54.8019, lon: -68.3030 },
+    ]
+  },
+];
+
+const RISK = {
+  clear:     { label: "Despejado",       hex: "#5c7a4e" },
+  moderate:  { label: "Riesgo moderado", hex: "#c68a2e" },
+  probable:  { label: "Niebla probable", hex: "#b25a2e" },
+  dense:     { label: "Niebla densa",    hex: "#8b2e2e" },
+  unknown:   { label: "Sin datos",       hex: "#a79a82" },
+};
+
+const ICE_RISK = {
+  clear:  { label: "Sin riesgo",         hex: "#5c7a4e" },
+  watch:  { label: "Posible escarcha",   hex: "#9fb8c9" },
+  risk:   { label: "Riesgo de hielo",    hex: "#5b86a8" },
+  severe: { label: "Hielo severo",       hex: "#2b3f5c" },
+  unknown:{ label: "Sin datos",          hex: "#a79a82" },
+};
+
+const TEMP_RISK = {
+  extreme_cold: { label: "Frío extremo",  hex: "#2b3f5c" },
+  cold:         { label: "Frío intenso",  hex: "#5b86a8" },
+  clear:        { label: "Templado",      hex: "#5c7a4e" },
+  heat:         { label: "Calor intenso", hex: "#c68a2e" },
+  extreme_heat: { label: "Calor extremo", hex: "#8b2e2e" },
+  unknown:      { label: "Sin datos",     hex: "#a79a82" },
+};
+
+// Layer currently driving the ribbon color and map marker color.
+// 'fog' -> classifyRisk()+RISK, 'ice' -> classifyIce()+ICE_RISK, 'temp' -> classifyTemp()+TEMP_RISK.
+let activeLayer = 'fog';
+
+function currentLayerConfig() {
+  if (activeLayer === 'ice')  return { classify: classifyIce,  map: ICE_RISK };
+  if (activeLayer === 'temp') return { classify: classifyTemp, map: TEMP_RISK };
+  return { classify: classifyRisk, map: RISK };
+}
+
+const statusEl = document.getElementById('status');
+function setStatus(msg, isError) {
+  statusEl.textContent = msg;
+  statusEl.classList.add('visible');
+  statusEl.classList.toggle('error', !!isError);
+}
+function clearStatus() { statusEl.classList.remove('visible'); }
+
+function haversine(a, b) {
+  const R = 6371;
+  const dLat = (b[1]-a[1]) * Math.PI/180;
+  const dLon = (b[0]-a[0]) * Math.PI/180;
+  const lat1 = a[1]*Math.PI/180, lat2 = b[1]*Math.PI/180;
+  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+
+// Sample N points proportionally by cumulative distance along a coordinate list [ [lon,lat], ... ]
+// Also tags samples that land very close to a named waypoint (e.g. Córdoba) for display.
+function sampleAlongRoute(coords, n, waypoints) {
+  const cum = [0];
+  for (let i = 1; i < coords.length; i++) {
+    cum.push(cum[i-1] + haversine(coords[i-1], coords[i]));
+  }
+  const total = cum[cum.length-1];
+  const targets = [];
+  for (let i = 0; i < n; i++) targets.push(total * i / (n-1));
+
+  const samples = [];
+  let seg = 0;
+  for (const t of targets) {
+    while (seg < cum.length-2 && cum[seg+1] < t) seg++;
+    const segLen = cum[seg+1] - cum[seg];
+    const frac = segLen > 0 ? (t - cum[seg]) / segLen : 0;
+    const [lon1, lat1] = coords[seg];
+    const [lon2, lat2] = coords[seg+1];
+    const lat = lat1 + (lat2-lat1)*frac;
+    const lon = lon1 + (lon2-lon1)*frac;
+
+    let nearestWaypoint = null;
+    for (const wp of waypoints) {
+      const d = haversine([lon, lat], [wp.lon, wp.lat]);
+      if (d < 25) { nearestWaypoint = wp.name; break; } // within 25km of a named waypoint
+    }
+
+    samples.push({ lat, lon, km: t, waypointTag: nearestWaypoint });
+  }
+  return { samples, total };
+}
+
+function classifyRisk(point) {
+  const { temp, dewpoint, humidity, visibility } = point;
+  if (temp == null || dewpoint == null) return 'unknown';
+  const spread = temp - dewpoint;
+
+  if (visibility != null) {
+    if (visibility < 1000) return 'dense';
+    if (visibility < 5000) return 'probable';
+  }
+  if (spread < 1 && humidity >= 92) return 'dense';
+  if (spread < 2 && humidity >= 90) return 'probable';
+  if (spread < 3.5 && humidity >= 85) return 'moderate';
+  return 'clear';
+}
+
+// Ice / frost risk on the road surface. Air temperature at 2m is a proxy —
+// actual pavement temperature can run a couple degrees colder on clear, still
+// nights, so these thresholds lean cautious rather than exact.
+function classifyIce(point) {
+  const { temp, humidity } = point;
+  if (temp == null) return 'unknown';
+  if (temp <= 0) return 'severe';
+  if (temp <= 2 && humidity != null && humidity >= 80) return 'risk';
+  if (temp <= 4 && humidity != null && humidity >= 90) return 'watch';
+  return 'clear';
+}
+
+// Extreme heat / cold, using "feels like" temperature when available since it
+// factors in wind and humidity — a better proxy for real risk than raw air temp.
+function classifyTemp(point) {
+  const t = point.apparentTemp != null ? point.apparentTemp : point.temp;
+  if (t == null) return 'unknown';
+  if (t >= 39) return 'extreme_heat';
+  if (t >= 32) return 'heat';
+  if (t <= -10) return 'extreme_cold';
+  if (t <= 0) return 'cold';
+  return 'clear';
+}
+
+async function fetchRoute(waypoints) {
+  const coordStr = waypoints.map(w => `${w.lon},${w.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('OSRM respondió ' + res.status);
+  const data = await res.json();
+  if (!data.routes || !data.routes.length) throw new Error('OSRM no devolvió ninguna ruta');
+  return data.routes[0];
+}
+
+// Free-text place -> {name, lat, lon} via Nominatim (OpenStreetMap), biased to Argentina.
+async function geocode(query) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${encodeURIComponent(query)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Nominatim respondió ' + res.status);
+  const data = await res.json();
+  if (!data.length) return null;
+  const d = data[0];
+  return { name: d.display_name.split(',')[0].trim(), lat: parseFloat(d.lat), lon: parseFloat(d.lon) };
+}
+
+function upsertCustomRoute(originName, originLat, originLon, destName, destLat, destLon) {
+  const routeObj = {
+    id: 'custom',
+    number: 'PERSONALIZADA',
+    label: `${originName} ⇄ ${destName}`,
+    waypoints: [
+      { name: originName, lat: originLat, lon: originLon },
+      { name: destName,   lat: destLat,   lon: destLon },
+    ]
+  };
+  const idx = ROUTES.findIndex(r => r.id === 'custom');
+  if (idx >= 0) ROUTES[idx] = routeObj; else ROUTES.push(routeObj);
+  delete cache['custom'];
+}
+
+async function searchCustomRoute() {
+  const fromText = document.getElementById('input-desde').value.trim();
+  const toText = document.getElementById('input-hasta').value.trim();
+  if (!fromText || !toText) {
+    setStatus('Completá "Desde" y "Hasta" para buscar una ruta.', true);
+    return;
+  }
+  try {
+    setStatus(`Buscando "${fromText}" y "${toText}"…`);
+    const [originRes, destRes] = await Promise.all([geocode(fromText), geocode(toText)]);
+    if (!originRes) throw new Error(`No se encontró "${fromText}"`);
+    if (!destRes) throw new Error(`No se encontró "${toText}"`);
+    customQuery = { from: fromText, to: toText };
+    upsertCustomRoute(originRes.name, originRes.lat, originRes.lon, destRes.name, destRes.lat, destRes.lon);
+    await loadRoute('custom');
+  } catch (err) {
+    console.error(err);
+    setStatus('Error: ' + err.message, true);
+  }
+}
+
+async function fetchWeatherForPoints(points) {
+  const lats = points.map(p => p.lat.toFixed(4)).join(',');
+  const lons = points.map(p => p.lon.toFixed(4)).join(',');
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}` +
+    `&current=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature` +
+    `&hourly=visibility` +
+    `&forecast_days=1&timezone=auto`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Open-Meteo respondió ' + res.status);
+  const data = await res.json();
+  const results = Array.isArray(data) ? data : [data];
+  return results.map((r, i) => {
+    let visibility = null;
+    try {
+      if (r.hourly && r.hourly.time && r.hourly.visibility) {
+        const nowIso = r.current ? r.current.time : r.hourly.time[0];
+        let idx = r.hourly.time.indexOf(nowIso);
+        if (idx === -1) idx = 0;
+        visibility = r.hourly.visibility[idx];
+      }
+    } catch (e) { /* keep null */ }
+    return {
+      ...points[i],
+      temp: r.current ? r.current.temperature_2m : null,
+      humidity: r.current ? r.current.relative_humidity_2m : null,
+      dewpoint: r.current ? r.current.dew_point_2m : null,
+      apparentTemp: r.current ? r.current.apparent_temperature : null,
+      visibility
+    };
+  });
+}
+
+function fmt(v, unit, digits=1) {
+  if (v == null || isNaN(v)) return '—';
+  return v.toFixed(digits) + (unit || '');
+}
+
+let map, markers = [], routeLine = null;
+const cache = {}; // routeId -> { points, distanceKm, coords }
+let activeRouteId = null;
+
+function initMap() {
+  map = L.map('map', { zoomControl: true }).setView([-32, -63], 5);
+  L.tileLayer('https://wms.ign.gob.ar/geoserver/gwc/service/tms/1.0.0/capabaseargenmap@EPSG:3857@png/{z}/{x}/{-y}.png', {
+    attribution: '<a href="https://www.ign.gob.ar/AreaServicios/Argenmap/Introduccion" target="_blank">Instituto Geográfico Nacional</a> + <a href="https://www.osm.org/copyright" target="_blank">OpenStreetMap</a>',
+    minZoom: 3,
+    maxZoom: 18
+  }).addTo(map);
+}
+
+function routeSortKey(route) {
+  const n = parseInt(route.number.replace(/\D/g, ''), 10);
+  return isNaN(n) ? Infinity : n;
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = '';
+  const sorted = [...ROUTES].sort((a, b) => routeSortKey(a) - routeSortKey(b));
+  const customIdx = sorted.findIndex(r => r.id === 'custom');
+  if (customIdx > -1) {
+    const [custom] = sorted.splice(customIdx, 1);
+    sorted.unshift(custom);
+  }
+  sorted.forEach(route => {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (route.id === activeRouteId ? ' active' : '') + (route.id === 'custom' ? ' tab-custom' : '');
+    tab.textContent = route.id === 'custom' ? '🔍 ' + route.number : route.number;
+    tab.title = route.label;
+    tab.addEventListener('click', () => loadRoute(route.id));
+    tabsEl.appendChild(tab);
+  });
+}
+
+function renderRouteOnMap(coords) {
+  if (routeLine) map.removeLayer(routeLine);
+  const latlngs = coords.map(c => [c[1], c[0]]);
+  routeLine = L.polyline(latlngs, { color: '#7a3a18', weight: 3, opacity: 0.75 }).addTo(map);
+  map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+}
+
+function renderPoints(points) {
+  const ribbon = document.getElementById('ribbon');
+  const list = document.getElementById('point-list');
+  ribbon.innerHTML = '';
+  list.innerHTML = '';
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  const { classify, map: riskMap } = currentLayerConfig();
+
+  points.forEach((p, i) => {
+    const risk = classify(p);
+    const info = riskMap[risk];
+
+    const fogInfo = RISK[classifyRisk(p)];
+    const iceInfo = ICE_RISK[classifyIce(p)];
+    const tempInfo = TEMP_RISK[classifyTemp(p)];
+
+    const seg = document.createElement('div');
+    seg.className = 'ribbon-seg';
+    seg.style.background = info.hex;
+    seg.title = `Km ${Math.round(p.km)} · ${info.label}` + (p.waypointTag ? ` · ${p.waypointTag}` : '');
+    ribbon.appendChild(seg);
+
+    const marker = L.circleMarker([p.lat, p.lon], {
+      radius: 7,
+      color: '#3c2413',
+      weight: 1.5,
+      fillColor: info.hex,
+      fillOpacity: 0.95
+    }).addTo(map);
+
+    marker.bindPopup(`
+      <div class="popup-title">PUNTO ${i+1} · KM ${Math.round(p.km)}${p.waypointTag ? ' · ' + p.waypointTag.toUpperCase() : ''}</div>
+      <div class="popup-risk" style="color:${fogInfo.hex}">🌫️ ${fogInfo.label}</div>
+      <div class="popup-risk" style="color:${iceInfo.hex}; margin-top:-2px;">🧊 ${iceInfo.label}</div>
+      <div class="popup-risk" style="color:${tempInfo.hex}; margin-top:-2px;">🌡️ ${tempInfo.label}</div>
+      <div class="popup-detail">
+        Temp: ${fmt(p.temp, '°C')}<br>
+        Sens. térmica: ${fmt(p.apparentTemp, '°C')}<br>
+        Punto de rocío: ${fmt(p.dewpoint, '°C')}<br>
+        Humedad: ${fmt(p.humidity, '%', 0)}<br>
+        Visibilidad: ${p.visibility != null ? Math.round(p.visibility) + ' m' : '—'}
+      </div>
+    `);
+    markers.push(marker);
+
+    const item = document.createElement('div');
+    item.className = 'point-item';
+    item.innerHTML = `
+      <div class="point-top">
+        <span class="point-idx">PUNTO ${i+1} · KM ${Math.round(p.km)}${p.waypointTag ? `<span class="waypoint-tag">${p.waypointTag}</span>` : ''}</span>
+        <span class="badge-group">
+          <span class="risk-badge" style="background:${fogInfo.hex}22; color:${fogInfo.hex}; border:1px solid ${fogInfo.hex}55" title="Niebla">🌫️ ${fogInfo.label}</span>
+          <span class="risk-badge" style="background:${iceInfo.hex}22; color:${iceInfo.hex}; border:1px solid ${iceInfo.hex}55" title="Hielo">🧊 ${iceInfo.label}</span>
+          <span class="risk-badge" style="background:${tempInfo.hex}22; color:${tempInfo.hex}; border:1px solid ${tempInfo.hex}55" title="Temperatura extrema">🌡️ ${tempInfo.label}</span>
+        </span>
+      </div>
+      <div class="point-detail">
+        <span>Temp: <b>${fmt(p.temp, '°C')}</b></span>
+        <span>Sens.: <b>${fmt(p.apparentTemp, '°C')}</b></span>
+        <span>P. rocío: <b>${fmt(p.dewpoint, '°C')}</b></span>
+        <span>Humedad: <b>${fmt(p.humidity, '%', 0)}</b></span>
+        <span>Visib.: <b>${p.visibility != null ? Math.round(p.visibility) + 'm' : '—'}</b></span>
+      </div>
+    `;
+    list.appendChild(item);
+
+    function activate() {
+      document.querySelectorAll('.ribbon-seg, .point-item').forEach(el => el.classList.remove('active'));
+      seg.classList.add('active');
+      item.classList.add('active');
+      map.panTo([p.lat, p.lon]);
+      marker.openPopup();
+    }
+    seg.addEventListener('click', activate);
+    item.addEventListener('click', activate);
+  });
+}
+
+// URL hash encodes the full state so a shared link reconstructs custom routes too:
+// fixed routes -> #route=rn9 ; custom routes -> #route=custom&from=...&to=...
+let customQuery = { from: '', to: '' };
+
+function buildHash(routeId) {
+  if (routeId === 'custom' && customQuery.from && customQuery.to) {
+    return `route=custom&from=${encodeURIComponent(customQuery.from)}&to=${encodeURIComponent(customQuery.to)}`;
+  }
+  return `route=${routeId}`;
+}
+
+function parseHash() {
+  const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+  return { route: params.get('route'), from: params.get('from'), to: params.get('to') };
+}
+
+async function loadRoute(routeId) {
+  const route = ROUTES.find(r => r.id === routeId);
+  activeRouteId = routeId;
+  renderTabs();
+
+  document.getElementById('route-subtitle').textContent = `${route.number} · ${route.label}`;
+  document.getElementById('tick-origin').textContent = route.waypoints[0].name;
+  document.getElementById('tick-dest').textContent = route.waypoints[route.waypoints.length-1].name;
+  const hash = buildHash(routeId);
+  if (location.hash.replace(/^#/, '') !== hash) {
+    history.replaceState(null, '', '#' + hash);
+  }
+
+  if (cache[routeId]) {
+    renderRouteOnMap(cache[routeId].coords);
+    renderPoints(cache[routeId].points);
+    document.getElementById('stat-distance').textContent = cache[routeId].distanceKm.toFixed(0) + ' km';
+    clearStatus();
+    return;
+  }
+
+  try {
+    setStatus(`Calculando ${route.number} con OSRM…`);
+    const routeData = await fetchRoute(route.waypoints);
+    const coords = routeData.geometry.coordinates;
+    const distanceKm = routeData.distance / 1000;
+    document.getElementById('stat-distance').textContent = distanceKm.toFixed(0) + ' km';
+
+    renderRouteOnMap(coords);
+
+    setStatus(`Muestreando 20 puntos a lo largo de ${route.number}…`);
+    const { samples } = sampleAlongRoute(coords, N_POINTS, route.waypoints);
+
+    setStatus('Consultando condiciones meteorológicas en Open-Meteo…');
+    const points = await fetchWeatherForPoints(samples);
+
+    cache[routeId] = { points, distanceKm, coords };
+    renderPoints(points);
+    clearStatus();
+  } catch (err) {
+    console.error(err);
+    setStatus('Error: ' + err.message + '. Es posible que el servidor demo de OSRM esté saturado — reintentá en unos segundos.', true);
+  }
+}
+
+function shareCurrentRoute() {
+  const route = ROUTES.find(r => r.id === activeRouteId);
+  if (!route) return;
+
+  const shareUrl = location.origin + location.pathname + '#' + buildHash(route.id);
+  let lines = [
+    `🌫️ *Condiciones de niebla en tiempo real*`,
+    `${route.number} · ${route.label}`,
+  ];
+
+  const cached = cache[route.id];
+  if (cached) {
+    lines.push(`Distancia: ${cached.distanceKm.toFixed(0)} km`);
+    const counts = { clear: 0, moderate: 0, probable: 0, dense: 0, unknown: 0 };
+    cached.points.forEach(p => counts[classifyRisk(p)]++);
+    const alert = counts.dense + counts.probable;
+    if (alert > 0) {
+      lines.push(`⚠️ ${alert} de ${cached.points.length} puntos con niebla probable o densa`);
+    } else {
+      lines.push(`✅ Sin alertas de niebla en los ${cached.points.length} puntos muestreados`);
+    }
+
+    const iceCounts = { clear: 0, watch: 0, risk: 0, severe: 0, unknown: 0 };
+    cached.points.forEach(p => iceCounts[classifyIce(p)]++);
+    const iceAlert = iceCounts.severe + iceCounts.risk;
+    if (iceAlert > 0) {
+      lines.push(`🧊 ${iceAlert} de ${cached.points.length} puntos con riesgo de hielo`);
+    }
+
+    const tempCounts = { extreme_cold: 0, cold: 0, clear: 0, heat: 0, extreme_heat: 0, unknown: 0 };
+    cached.points.forEach(p => tempCounts[classifyTemp(p)]++);
+    const tempAlert = tempCounts.extreme_cold + tempCounts.extreme_heat;
+    if (tempAlert > 0) {
+      lines.push(`🌡️ ${tempAlert} de ${cached.points.length} puntos con temperatura extrema`);
+    }
+  }
+
+  lines.push('', shareUrl);
+
+  const text = encodeURIComponent(lines.join('\n'));
+  window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+document.getElementById('share-btn').addEventListener('click', shareCurrentRoute);
+
+document.getElementById('search-route-btn').addEventListener('click', searchCustomRoute);
+['input-desde', 'input-hasta'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') searchCustomRoute();
+  });
+});
+
+document.getElementById('layer-toggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.layer-btn');
+  if (!btn) return;
+  const layer = btn.dataset.layer;
+  if (layer === activeLayer) return;
+  activeLayer = layer;
+  document.querySelectorAll('.layer-btn').forEach(b => b.classList.toggle('active', b.dataset.layer === layer));
+  document.getElementById('ribbon-label').textContent =
+    layer === 'ice' ? 'Riesgo de hielo / escarcha a lo largo del trayecto' :
+    layer === 'temp' ? 'Temperaturas extremas a lo largo del trayecto' :
+    'Riesgo de niebla a lo largo del trayecto';
+  if (cache[activeRouteId]) {
+    renderPoints(cache[activeRouteId].points);
+  }
+});
+
+initMap();
+renderTabs();
+
+async function bootstrapFromHash() {
+  const { route: routeParam, from, to } = parseHash();
+  if (routeParam === 'custom' && from && to) {
+    document.getElementById('input-desde').value = from;
+    document.getElementById('input-hasta').value = to;
+    await searchCustomRoute();
+    return;
+  }
+  const initialRoute = ROUTES.find(r => r.id === routeParam);
+  loadRoute(initialRoute ? initialRoute.id : ROUTES[0].id);
+}
+bootstrapFromHash();
+
+window.addEventListener('hashchange', () => {
+  const { route: routeParam, from, to } = parseHash();
+  if (routeParam === 'custom') {
+    if (from && to && (from !== customQuery.from || to !== customQuery.to)) {
+      document.getElementById('input-desde').value = from;
+      document.getElementById('input-hasta').value = to;
+      searchCustomRoute();
+    }
+    return;
+  }
+  if (routeParam && routeParam !== activeRouteId && ROUTES.find(r => r.id === routeParam)) {
+    loadRoute(routeParam);
+  }
+});
+</script>
+</body>
+</html>
