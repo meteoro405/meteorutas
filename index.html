@@ -313,10 +313,12 @@
   .ribbon-ticks {
     display: flex;
     justify-content: space-between;
-    margin-top: 6px;
+    margin-top: 8px;
     font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--ink-faint);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--cuero);
   }
 
   /* ---------- MAIN LAYOUT ---------- */
@@ -473,7 +475,7 @@
     .layer-btn { padding: 7px 13px; font-size: 15px; }
     .ribbon-label { font-size: 14px; margin-bottom: 6px; }
     .ribbon { height: 24px; }
-    .ribbon-ticks { font-size: 9px; margin-top: 4px; }
+    .ribbon-ticks { font-size: 12.5px; margin-top: 6px; }
 
     header, .ribbon-wrap { padding-left: 14px; padding-right: 14px; }
   }
@@ -631,6 +633,56 @@ const ROUTES = [
       { name: 'Embarcación',                lat: -23.2167, lon: -64.0833 },
       { name: 'Tartagal',                   lat: -22.5217, lon: -63.7942 },
       { name: 'Pocitos',                    lat: -22.0500, lon: -63.6969 },
+    ]
+  },
+  {
+    id: 'rn38',
+    number: 'RN38',
+    label: 'Villa Carlos Paz ⇄ San Miguel de Tucumán',
+    waypoints: [
+      { name: 'Villa Carlos Paz',       lat: -31.4241, lon: -64.4978 },
+      { name: 'Cruz del Eje',           lat: -30.7275, lon: -64.8039 },
+      { name: 'La Rioja',               lat: -29.4131, lon: -66.8558 },
+      { name: 'Chumbicha',              lat: -28.8667, lon: -66.2333 },
+      { name: 'Catamarca',              lat: -28.4696, lon: -65.7852 },
+      { name: 'La Cocha',               lat: -27.7667, lon: -65.5833 },
+      { name: 'Aguilares',              lat: -27.4333, lon: -65.6167 },
+      { name: 'Concepción',             lat: -27.3333, lon: -65.5833 },
+      { name: 'San Miguel de Tucumán',  lat: -26.8083, lon: -65.2176 },
+    ]
+  },
+  {
+    id: 'rn40',
+    number: 'RN40',
+    label: 'Río Turbio ⇄ La Quiaca',
+    waypoints: [
+      { name: 'Río Turbio',          lat: -51.5567, lon: -72.3111 },
+      { name: 'El Calafate',         lat: -50.3379, lon: -72.2648 },
+      { name: 'Gobernador Gregores', lat: -48.7761, lon: -70.2639 },
+      { name: 'Perito Moreno',       lat: -46.5989, lon: -70.9231 },
+      { name: 'Los Antiguos',        lat: -46.5667, lon: -71.6333 },
+      { name: 'Esquel',              lat: -42.9092, lon: -71.3167 },
+      { name: 'Bariloche',           lat: -41.1335, lon: -71.3103 },
+      { name: 'Zapala',              lat: -38.9017, lon: -70.0592 },
+      { name: 'Chos Malal',          lat: -37.3782, lon: -70.2716 },
+      { name: 'Malargüe',            lat: -35.4752, lon: -69.5859 },
+      { name: 'San Rafael',          lat: -34.6177, lon: -68.3301 },
+      { name: 'Uspallata',           lat: -32.5928, lon: -69.3479 },
+      { name: 'Barreal',             lat: -31.6423, lon: -69.4636 },
+      { name: 'Belén',               lat: -27.6479, lon: -67.0328 },
+      { name: 'Cafayate',            lat: -26.0725, lon: -65.9761 },
+      { name: 'Cachi',               lat: -25.1213, lon: -66.1653 },
+      { name: 'Humahuaca',           lat: -23.2074, lon: -65.3505 },
+      { name: 'La Quiaca',           lat: -22.1061, lon: -65.5975 },
+    ]
+  },
+  {
+    id: 'rn188',
+    number: 'RN188',
+    label: 'Junín ⇄ San Rafael',
+    waypoints: [
+      { name: 'Junín',      lat: -34.5836, lon: -60.9720 },
+      { name: 'San Rafael', lat: -34.6177, lon: -68.3301 },
     ]
   },
 ];
