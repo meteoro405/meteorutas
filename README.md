@@ -51,6 +51,17 @@ https://TU-USUARIO.github.io/TU-REPO/meteorutas/
 
 ```
 meteorutas-repo/
-├── index.html   ← la app completa
+├── index.html          ← la app completa
+├── manifest.json        ← metadata PWA (nombre, íconos, colores)
+├── service-worker.js    ← habilita "instalar app"; no cachea nada (siempre carga fresco)
+├── icons/
+│   ├── icon-192.png
+│   └── icon-512.png
 └── README.md
 ```
+
+## Instalación como app (PWA)
+
+El botón "Instalar" aparece solo en navegadores Chromium (Chrome, Edge, Samsung Internet) en Android y desktop — es el único ecosistema que dispara el evento `beforeinstallprompt`. En iOS/Safari no existe ese evento; ahí se instala manualmente vía **Compartir → Agregar a pantalla de inicio**, así que el botón se mantiene oculto en ese navegador (no es un bug, es una limitación de Apple).
+
+El service worker (`service-worker.js`) existe únicamente para cumplir el requisito técnico de instalabilidad — **no cachea nada**. Cada carga de la app pide todo de nuevo a la red (mapa, clima, ruteo), así nunca vas a quedar viendo una versión vieja cacheada por error.
