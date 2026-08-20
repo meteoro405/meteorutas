@@ -82,7 +82,7 @@
   h1 {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 25px;
+    font-size: 34px;
     letter-spacing: -0.005em;
     color: var(--cuero-dark);
     text-transform: uppercase;
@@ -93,7 +93,7 @@
     display: block;
     font-family: var(--font-body);
     font-weight: 500;
-    font-size: 13px;
+    font-size: 16px;
     letter-spacing: 0.04em;
     text-transform: none;
     color: var(--ink-dim);
@@ -252,15 +252,7 @@
 
   .ribbon-label {
     font-family: var(--font-mono);
-    font-size: 10.5px;
-    color: var(--ink-dim);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .layer-toggle {
+    font-size: 13.5px;
     display: flex;
     gap: 6px;
     margin-bottom: 14px;
@@ -269,8 +261,8 @@
   .layer-btn {
     font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 12px;
-    padding: 7px 14px;
+    font-size: 15px;
+    padding: 8px 16px;
     border-radius: 100px;
     border: 1px solid var(--line-strong);
     background: var(--pergamino);
@@ -448,8 +440,8 @@
 
     header { padding: 12px 14px 0; }
     .brand-row { gap: 10px; }
-    h1 { font-size: 15px; line-height: 1.2; }
-    .brand-by { font-size: 10px; margin-top: 1px; }
+    h1 { font-size: 20px; line-height: 1.2; }
+    .brand-by { font-size: 13px; margin-top: 1px; }
     .share-btn { padding: 6px 10px; font-size: 10.5px; gap: 5px; }
     .install-btn { padding: 6px 10px; font-size: 10.5px; gap: 5px; }
     .header-actions { gap: 6px; }
@@ -470,8 +462,8 @@
 
     .ribbon-wrap { padding: 10px 14px 12px; }
     .layer-toggle { gap: 4px; margin-bottom: 8px; }
-    .layer-btn { padding: 5px 9px; font-size: 10.5px; }
-    .ribbon-label { font-size: 9.5px; margin-bottom: 6px; }
+    .layer-btn { padding: 6px 11px; font-size: 13px; }
+    .ribbon-label { font-size: 12px; margin-bottom: 6px; }
     .ribbon { height: 24px; }
     .ribbon-ticks { font-size: 9px; margin-top: 4px; }
 
@@ -585,6 +577,52 @@ const ROUTES = [
       { name: 'Comodoro Rivadavia',  lat: -45.8641, lon: -67.4966 },
       { name: 'Río Gallegos',        lat: -51.6230, lon: -69.2168 },
       { name: 'Ushuaia',             lat: -54.8019, lon: -68.3030 },
+    ]
+  },
+  {
+    id: 'rn12',
+    number: 'RN12',
+    label: 'Zárate ⇄ Puerto Iguazú',
+    waypoints: [
+      { name: 'Zárate',         lat: -34.0989, lon: -59.0288 },
+      { name: 'Ceibas',         lat: -33.4999, lon: -58.8006 },
+      { name: 'Nogoyá',         lat: -32.3999, lon: -59.7943 },
+      { name: 'Paraná',         lat: -31.7333, lon: -60.5297 },
+      { name: 'Corrientes',     lat: -27.4806, lon: -58.8341 },
+      { name: 'Posadas',        lat: -27.3671, lon: -55.8961 },
+      { name: 'Puerto Iguazú',  lat: -25.5952, lon: -54.5735 },
+    ]
+  },
+  {
+    id: 'rn14',
+    number: 'RN14',
+    label: 'Ceibas ⇄ Bernardo de Irigoyen',
+    waypoints: [
+      { name: 'Ceibas',               lat: -33.4999, lon: -58.8006 },
+      { name: 'Gualeguaychú',         lat: -33.0094, lon: -58.5172 },
+      { name: 'Colón',                lat: -32.2242, lon: -58.1400 },
+      { name: 'Concordia',            lat: -31.3930, lon: -58.0209 },
+      { name: 'Paso de los Libres',   lat: -29.7000, lon: -57.0900 },
+      { name: 'Santo Tomé',           lat: -28.5522, lon: -56.0464 },
+      { name: 'Gob. Virasoro',        lat: -28.0500, lon: -56.0333 },
+      { name: 'Oberá',                lat: -27.4870, lon: -55.1199 },
+      { name: 'Bernardo de Irigoyen', lat: -26.2547, lon: -53.6442 },
+    ]
+  },
+  {
+    id: 'rn34',
+    number: 'RN34',
+    label: 'Rosario ⇄ Pocitos',
+    waypoints: [
+      { name: 'Rosario',                    lat: -32.9468, lon: -60.6393 },
+      { name: 'Ceres',                      lat: -29.8833, lon: -61.9500 },
+      { name: 'Santiago del Estero',        lat: -27.7834, lon: -64.2642 },
+      { name: 'Rosario de la Frontera',     lat: -25.8000, lon: -64.9667 },
+      { name: 'General Güemes',             lat: -24.6667, lon: -65.0500 },
+      { name: 'Libertador Gral. San Martín',lat: -23.8064, lon: -64.7897 },
+      { name: 'Embarcación',                lat: -23.2167, lon: -64.0833 },
+      { name: 'Tartagal',                   lat: -22.5217, lon: -63.7942 },
+      { name: 'Pocitos',                    lat: -22.0500, lon: -63.6969 },
     ]
   },
 ];
@@ -737,7 +775,7 @@ async function geocode(query) {
 function upsertCustomRoute(originName, originLat, originLon, destName, destLat, destLon) {
   const routeObj = {
     id: 'custom',
-    number: 'PERSONALIZADA',
+    number: '',
     label: `${originName} ⇄ ${destName}`,
     waypoints: [
       { name: originName, lat: originLat, lon: originLon },
@@ -837,7 +875,7 @@ function renderTabs() {
   sorted.forEach(route => {
     const tab = document.createElement('div');
     tab.className = 'tab' + (route.id === activeRouteId ? ' active' : '') + (route.id === 'custom' ? ' tab-custom' : '');
-    tab.textContent = route.id === 'custom' ? '🔍 ' + route.number : route.number;
+    tab.textContent = route.id === 'custom' ? '🔍' : route.number;
     tab.title = route.label;
     tab.addEventListener('click', () => loadRoute(route.id));
     tabsEl.appendChild(tab);
@@ -952,7 +990,7 @@ async function loadRoute(routeId) {
   activeRouteId = routeId;
   renderTabs();
 
-  document.getElementById('route-subtitle').textContent = `${route.number} · ${route.label}`;
+  document.getElementById('route-subtitle').textContent = route.number ? `${route.number} · ${route.label}` : route.label;
   document.getElementById('tick-origin').textContent = route.waypoints[0].name;
   document.getElementById('tick-dest').textContent = route.waypoints[route.waypoints.length-1].name;
   const hash = buildHash(routeId);
@@ -968,8 +1006,10 @@ async function loadRoute(routeId) {
     return;
   }
 
+  const displayName = route.number || route.label;
+
   try {
-    setStatus(`Calculando ${route.number} con OSRM…`);
+    setStatus(`Calculando ${displayName} con OSRM…`);
     const routeData = await fetchRoute(route.waypoints);
     const coords = routeData.geometry.coordinates;
     const distanceKm = routeData.distance / 1000;
@@ -977,7 +1017,7 @@ async function loadRoute(routeId) {
 
     renderRouteOnMap(coords);
 
-    setStatus(`Muestreando 20 puntos a lo largo de ${route.number}…`);
+    setStatus(`Muestreando 20 puntos a lo largo de ${displayName}…`);
     const { samples } = sampleAlongRoute(coords, N_POINTS, route.waypoints);
 
     setStatus('Consultando condiciones meteorológicas en Open-Meteo…');
@@ -999,7 +1039,7 @@ function shareCurrentRoute() {
   const shareUrl = location.origin + location.pathname + '#' + buildHash(route.id);
   let lines = [
     `🌫️ *Condiciones de niebla en tiempo real*`,
-    `${route.number} · ${route.label}`,
+    route.number ? `${route.number} · ${route.label}` : route.label,
   ];
 
   const cached = cache[route.id];
