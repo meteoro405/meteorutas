@@ -47,6 +47,16 @@ https://TU-USUARIO.github.io/TU-REPO/meteorutas/
 - **Rutas fijas incluidas**: RN3, RN5, RN7, RN8, RN9. El buscador "Desde / Hasta" permite calcular cualquier otro trayecto sobre la marcha, sin necesidad de agregarlo al código.
 - **Compartir por WhatsApp**: el link generado codifica el estado completo en el hash de la URL (`#route=rn9` para rutas fijas, `#route=custom&from=...&to=...` para búsquedas personalizadas), así que abrir un link compartido reconstruye exactamente la misma ruta, incluida una búsqueda Desde/Hasta.
 
+## Analytics (Cloudflare Web Analytics)
+
+El `index.html` ya incluye el script de Cloudflare Web Analytics con un token de ejemplo (`YOUR_CLOUDFLARE_TOKEN`) que no reporta nada hasta que lo reemplaces por el tuyo:
+
+1. Entrá a [dash.cloudflare.com](https://dash.cloudflare.com) → **Web Analytics** → **Add a site**.
+2. Pegá la URL de tu sitio (`https://TU-USUARIO.github.io/meteorutas/`) — no hace falta que el dominio esté en Cloudflare, Web Analytics funciona vía JS beacon sin necesidad de mover el DNS.
+3. Cloudflare te da un token. Copialo.
+4. En `index.html`, buscá `YOUR_CLOUDFLARE_TOKEN` (dentro del `<script>` de Cloudflare, cerca del `</head>`) y reemplazalo por tu token real.
+5. Subí el cambio. A los pocos minutos vas a ver datos en el dashboard de Cloudflare — visitas, países, dispositivos, todo sin cookies ni datos personales.
+
 ## Estructura
 
 ```

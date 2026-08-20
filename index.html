@@ -102,7 +102,8 @@
 
   .header-actions {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-end;
     gap: 8px;
     flex-shrink: 0;
   }
@@ -262,6 +263,7 @@
 
   .layer-toggle {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     margin-bottom: 14px;
   }
@@ -480,6 +482,13 @@
     header, .ribbon-wrap { padding-left: 14px; padding-right: 14px; }
   }
 </style>
+<!--
+  Cloudflare Web Analytics — privacy-friendly, no cookies, free.
+  Replace YOUR_CLOUDFLARE_TOKEN below with the token from your own Cloudflare
+  dashboard (Account Home → Web Analytics → add a site → copy the token).
+  Until you replace it, this script simply won't report anything.
+-->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "YOUR_CLOUDFLARE_TOKEN"}'></script>
 </head>
 <body>
 
@@ -487,13 +496,13 @@
   <div class="brand-row">
     <h1>LA RUTA EN TIEMPO REAL <span class="brand-by">By Meteoro405</span></h1>
     <div class="header-actions">
-      <button id="install-btn" class="install-btn" title="Instalar MeteoRutas" style="display:none;">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 19h14"/></svg>
-        <span>Instalar</span>
-      </button>
       <button id="share-btn" class="share-btn" title="Enviar esta ruta por WhatsApp">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1s-.8 1-.9 1.2c-.2.2-.3.2-.6.1s-1.4-.5-2.6-1.6c-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.3 0-.5s-.7-1.7-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.3 4.7.7.3 1.3.5 1.8.7.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.4 5.1L2 22l5.1-1.3c1.4.8 3.1 1.2 4.9 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18.2c-1.6 0-3.1-.4-4.5-1.2l-.3-.2-3.3.9.9-3.2-.2-.3C3.8 14.7 3.3 13.4 3.3 12c0-4.8 3.9-8.7 8.7-8.7s8.7 3.9 8.7 8.7-3.9 8.7-8.7 8.7z"/></svg>
         <span>Compartir</span>
+      </button>
+      <button id="install-btn" class="install-btn" title="Instalar MeteoRutas" style="display:none;">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 19h14"/></svg>
+        <span>Instalar</span>
       </button>
     </div>
   </div>
@@ -517,7 +526,8 @@
   <div class="layer-toggle" id="layer-toggle">
     <button class="layer-btn active" data-layer="fog">🌫️ Niebla</button>
     <button class="layer-btn" data-layer="ice">🧊 Hielo</button>
-    <button class="layer-btn" data-layer="temp">🌡️ Temp. extrema</button>
+    <button class="layer-btn" data-layer="temp">🌡️ Temp.</button>
+    <button class="layer-btn" data-layer="wind">💨 Viento</button>
   </div>
   <div class="ribbon-label" id="ribbon-label">Riesgo de niebla a lo largo del trayecto</div>
   <div class="ribbon" id="ribbon"></div>
@@ -712,13 +722,23 @@ const TEMP_RISK = {
   unknown:      { label: "Sin datos",     hex: "#a79a82" },
 };
 
+const WIND_RISK = {
+  clear:    { label: "Calmo",             hex: "#5c7a4e" },
+  moderate: { label: "Viento fuerte",     hex: "#c68a2e" },
+  strong:   { label: "Viento muy fuerte", hex: "#b25a2e" },
+  severe:   { label: "Viento extremo",    hex: "#8b2e2e" },
+  unknown:  { label: "Sin datos",         hex: "#a79a82" },
+};
+
 // Layer currently driving the ribbon color and map marker color.
-// 'fog' -> classifyRisk()+RISK, 'ice' -> classifyIce()+ICE_RISK, 'temp' -> classifyTemp()+TEMP_RISK.
+// 'fog' -> classifyRisk()+RISK, 'ice' -> classifyIce()+ICE_RISK,
+// 'temp' -> classifyTemp()+TEMP_RISK, 'wind' -> classifyWind()+WIND_RISK.
 let activeLayer = 'fog';
 
 function currentLayerConfig() {
   if (activeLayer === 'ice')  return { classify: classifyIce,  map: ICE_RISK };
   if (activeLayer === 'temp') return { classify: classifyTemp, map: TEMP_RISK };
+  if (activeLayer === 'wind') return { classify: classifyWind, map: WIND_RISK };
   return { classify: classifyRisk, map: RISK };
 }
 
@@ -811,6 +831,17 @@ function classifyTemp(point) {
   return 'clear';
 }
 
+// Wind risk in km/h. Uses gust speed when available — sustained wind alone
+// understates the real hazard for high-sided vehicles and motorcycles.
+function classifyWind(point) {
+  const w = point.windGust != null ? point.windGust : point.windSpeed;
+  if (w == null) return 'unknown';
+  if (w >= 90) return 'severe';
+  if (w >= 70) return 'strong';
+  if (w >= 50) return 'moderate';
+  return 'clear';
+}
+
 async function fetchRoute(waypoints) {
   const coordStr = waypoints.map(w => `${w.lon},${w.lat}`).join(';');
   const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`;
@@ -872,7 +903,7 @@ async function fetchWeatherForPoints(points) {
   const lats = points.map(p => p.lat.toFixed(4)).join(',');
   const lons = points.map(p => p.lon.toFixed(4)).join(',');
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}` +
-    `&current=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature` +
+    `&current=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m` +
     `&hourly=visibility` +
     `&forecast_days=1&timezone=auto`;
   const res = await fetch(url);
@@ -895,6 +926,8 @@ async function fetchWeatherForPoints(points) {
       humidity: r.current ? r.current.relative_humidity_2m : null,
       dewpoint: r.current ? r.current.dew_point_2m : null,
       apparentTemp: r.current ? r.current.apparent_temperature : null,
+      windSpeed: r.current ? r.current.wind_speed_10m : null,
+      windGust: r.current ? r.current.wind_gusts_10m : null,
       visibility
     };
   });
@@ -966,6 +999,7 @@ function renderPoints(points) {
     const fogInfo = RISK[classifyRisk(p)];
     const iceInfo = ICE_RISK[classifyIce(p)];
     const tempInfo = TEMP_RISK[classifyTemp(p)];
+    const windInfo = WIND_RISK[classifyWind(p)];
 
     const seg = document.createElement('div');
     seg.className = 'ribbon-seg';
@@ -986,11 +1020,13 @@ function renderPoints(points) {
       <div class="popup-risk" style="color:${fogInfo.hex}">🌫️ ${fogInfo.label}</div>
       <div class="popup-risk" style="color:${iceInfo.hex}; margin-top:-2px;">🧊 ${iceInfo.label}</div>
       <div class="popup-risk" style="color:${tempInfo.hex}; margin-top:-2px;">🌡️ ${tempInfo.label}</div>
+      <div class="popup-risk" style="color:${windInfo.hex}; margin-top:-2px;">💨 ${windInfo.label}</div>
       <div class="popup-detail">
         Temp: ${fmt(p.temp, '°C')}<br>
         Sens. térmica: ${fmt(p.apparentTemp, '°C')}<br>
         Punto de rocío: ${fmt(p.dewpoint, '°C')}<br>
         Humedad: ${fmt(p.humidity, '%', 0)}<br>
+        Viento: ${fmt(p.windSpeed, ' km/h', 0)} · Ráfagas: ${fmt(p.windGust, ' km/h', 0)}<br>
         Visibilidad: ${p.visibility != null ? Math.round(p.visibility) + ' m' : '—'}
       </div>
     `);
@@ -1005,6 +1041,7 @@ function renderPoints(points) {
           <span class="risk-badge" style="background:${fogInfo.hex}22; color:${fogInfo.hex}; border:1px solid ${fogInfo.hex}55" title="Niebla">🌫️ ${fogInfo.label}</span>
           <span class="risk-badge" style="background:${iceInfo.hex}22; color:${iceInfo.hex}; border:1px solid ${iceInfo.hex}55" title="Hielo">🧊 ${iceInfo.label}</span>
           <span class="risk-badge" style="background:${tempInfo.hex}22; color:${tempInfo.hex}; border:1px solid ${tempInfo.hex}55" title="Temperatura extrema">🌡️ ${tempInfo.label}</span>
+          <span class="risk-badge" style="background:${windInfo.hex}22; color:${windInfo.hex}; border:1px solid ${windInfo.hex}55" title="Viento">💨 ${windInfo.label}</span>
         </span>
       </div>
       <div class="point-detail">
@@ -1012,6 +1049,8 @@ function renderPoints(points) {
         <span>Sens.: <b>${fmt(p.apparentTemp, '°C')}</b></span>
         <span>P. rocío: <b>${fmt(p.dewpoint, '°C')}</b></span>
         <span>Humedad: <b>${fmt(p.humidity, '%', 0)}</b></span>
+        <span>Viento: <b>${fmt(p.windSpeed, 'km/h', 0)}</b></span>
+        <span>Ráfagas: <b>${fmt(p.windGust, 'km/h', 0)}</b></span>
         <span>Visib.: <b>${p.visibility != null ? Math.round(p.visibility) + 'm' : '—'}</b></span>
       </div>
     `;
@@ -1127,6 +1166,13 @@ function shareCurrentRoute() {
     if (tempAlert > 0) {
       lines.push(`🌡️ ${tempAlert} de ${cached.points.length} puntos con temperatura extrema`);
     }
+
+    const windCounts = { clear: 0, moderate: 0, strong: 0, severe: 0, unknown: 0 };
+    cached.points.forEach(p => windCounts[classifyWind(p)]++);
+    const windAlert = windCounts.strong + windCounts.severe;
+    if (windAlert > 0) {
+      lines.push(`💨 ${windAlert} de ${cached.points.length} puntos con viento fuerte`);
+    }
   }
 
   lines.push('', shareUrl);
@@ -1154,6 +1200,7 @@ document.getElementById('layer-toggle').addEventListener('click', (e) => {
   document.getElementById('ribbon-label').textContent =
     layer === 'ice' ? 'Riesgo de hielo / escarcha a lo largo del trayecto' :
     layer === 'temp' ? 'Temperaturas extremas a lo largo del trayecto' :
+    layer === 'wind' ? 'Viento a lo largo del trayecto' :
     'Riesgo de niebla a lo largo del trayecto';
   if (cache[activeRouteId]) {
     renderPoints(cache[activeRouteId].points);
