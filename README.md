@@ -69,6 +69,8 @@ Seis capas meteorológicas por punto de ruta (Niebla, Hielo, Temperatura, Viento
 
 Además, un botón independiente **"🌍 Sismos"** superpone actividad sísmica reciente (últimos 30 días, magnitud ≥ 3) cerca de la ruta activa, usando la API pública de USGS (gratis, sin key). A diferencia de las seis capas anteriores, los sismos no son un valor por punto de la ruta — son eventos independientes, así que se muestran como marcadores propios en el mapa (coloreados por magnitud) en vez de colorear la cinta de riesgo. Se puede activar junto con cualquier otra capa.
 
+Además, un botón independiente **"📍 Mi ubicación"** activa geolocalización en tiempo real (API nativa del navegador, sin key ni servicio externo): muestra una flecha sobre tu posición real en el mapa —rotada según el rumbo cuando el dispositivo lo reporta— y resalta automáticamente el punto de muestreo más cercano en la cinta de riesgo y en la lista lateral, con la distancia exacta. Es **solo en primer plano**: funciona mientras la app está abierta y visible; los navegadores no permiten geolocalización confiable en segundo plano para una PWA (para eso haría falta una app nativa).
+
 ## Estructura
 
 ```

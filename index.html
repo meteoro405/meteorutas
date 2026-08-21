@@ -315,6 +315,27 @@
     color: var(--pergamino);
   }
 
+  .user-loc-status {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--cuero);
+    font-weight: 600;
+    margin-top: 8px;
+    min-height: 1.2em;
+  }
+
+  .user-loc-marker svg { display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)); transition: transform 0.3s ease; }
+
+  .ribbon-seg.user-near {
+    outline: 2px solid var(--cuero);
+    outline-offset: -2px;
+    z-index: 3;
+  }
+  .point-item.user-near {
+    background: var(--pergamino-deep);
+    border-left: 3px solid var(--cuero);
+  }
+
   .ribbon {
     display: flex;
     height: 34px;
@@ -520,6 +541,7 @@
     .layer-toggle { gap: 4px; margin-bottom: 8px; }
     .layer-btn { padding: 6px 10px; font-size: 11.5px; }
     .quake-toggle-btn { padding: 5px 10px; font-size: 10.5px; }
+    .user-loc-status { font-size: 11px; margin-top: 6px; }
     .ribbon-label { font-size: 14px; margin-bottom: 6px; }
     .ribbon { height: 24px; }
     .ribbon-ticks { font-size: 12.5px; margin-top: 6px; }
@@ -576,7 +598,9 @@
     <button class="layer-btn" data-layer="alt">🏔️ Altitud</button>
     <button class="layer-btn" data-layer="precip">💧 Precipitaciones</button>
     <button id="quake-toggle-btn" class="quake-toggle-btn" title="Mostrar/ocultar sismos recientes cerca de la ruta (USGS)">🌍 Sismos</button>
+    <button id="loc-toggle-btn" class="quake-toggle-btn" title="Mostrar tu ubicación en tiempo real sobre el mapa">📍 Mi ubicación</button>
   </div>
+  <div id="user-loc-status" class="user-loc-status"></div>
   <div class="ribbon-label" id="ribbon-label">Riesgo de niebla a lo largo del trayecto</div>
   <div class="ribbon" id="ribbon"></div>
   <div class="ribbon-ticks">
@@ -1178,6 +1202,10 @@ function fmt(v, unit, digits=1) {
 let map, markers = [], routeLine = null;
 let quakeMarkers = [], quakesVisible = false;
 const quakeCache = {}; // routeId -> quake events array
+
+let watchId = null;
+let userMarker = null;
+let lastKnownPos = null;
 const cache = {}; // routeId -> { points, distanceKm, coords }
 let activeRouteId = null;
 
@@ -1395,6 +1423,110 @@ document.getElementById('quake-toggle-btn').addEventListener('click', () => {
   refreshQuakeOverlay();
 });
 
+// ---------- Live location: arrow icon on the map + nearest sample point ----------
+// Foreground-only by design (browsers don't allow reliable background
+// geolocation for a PWA — see prior conversation). Tracking runs only while
+// this tab/app is open and the button is toggled on.
+
+function buildUserLocIcon(headingDeg) {
+  const rot = (typeof headingDeg === 'number' && !isNaN(headingDeg)) ? headingDeg : 0;
+  return L.divIcon({
+    className: '',
+    html: `<div class="user-loc-marker" style="transform: rotate(${rot}deg)">
+      <svg viewBox="0 0 24 24" width="30" height="30">
+        <polygon points="12,2 19,21 12,16.5 5,21" fill="#7a3a18" stroke="#f3e8d2" stroke-width="1.5"/>
+      </svg>
+    </div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+}
+
+function updateNearestPoint(lat, lon) {
+  const statusEl = document.getElementById('user-loc-status');
+  const routeCache = cache[activeRouteId];
+  document.querySelectorAll('.ribbon-seg.user-near, .point-item.user-near')
+    .forEach(el => el.classList.remove('user-near'));
+
+  if (!routeCache || !routeCache.points.length) {
+    statusEl.textContent = '';
+    return;
+  }
+
+  let nearestIdx = -1, nearestDist = Infinity;
+  routeCache.points.forEach((p, idx) => {
+    const d = haversine([lon, lat], [p.lon, p.lat]);
+    if (d < nearestDist) { nearestDist = d; nearestIdx = idx; }
+  });
+  if (nearestIdx === -1) return;
+
+  const segs = document.querySelectorAll('.ribbon-seg');
+  const items = document.querySelectorAll('.point-item');
+  if (segs[nearestIdx]) segs[nearestIdx].classList.add('user-near');
+  if (items[nearestIdx]) items[nearestIdx].classList.add('user-near');
+
+  statusEl.textContent = `📍 A ${nearestDist.toFixed(1)} km del punto ${nearestIdx + 1} (Km ${Math.round(routeCache.points[nearestIdx].km)})`;
+}
+
+function onPosition(pos) {
+  const { latitude, longitude, heading } = pos.coords;
+  lastKnownPos = { lat: latitude, lon: longitude };
+  const icon = buildUserLocIcon(heading);
+  if (!userMarker) {
+    userMarker = L.marker([latitude, longitude], { icon, zIndexOffset: 1000 }).addTo(map);
+    map.panTo([latitude, longitude]);
+  } else {
+    userMarker.setLatLng([latitude, longitude]);
+    userMarker.setIcon(icon);
+  }
+  updateNearestPoint(latitude, longitude);
+}
+
+function onPositionError(err) {
+  console.error(err);
+  setStatus('No se pudo obtener tu ubicación: ' + err.message, true);
+  stopLocationTracking();
+  document.getElementById('loc-toggle-btn').classList.remove('active');
+}
+
+function startLocationTracking() {
+  if (!('geolocation' in navigator)) {
+    setStatus('Este navegador no soporta geolocalización.', true);
+    document.getElementById('loc-toggle-btn').classList.remove('active');
+    return;
+  }
+  watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
+    enableHighAccuracy: true,
+    maximumAge: 5000,
+    timeout: 15000
+  });
+}
+
+function stopLocationTracking() {
+  if (watchId != null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  if (userMarker) {
+    map.removeLayer(userMarker);
+    userMarker = null;
+  }
+  lastKnownPos = null;
+  document.getElementById('user-loc-status').textContent = '';
+  document.querySelectorAll('.ribbon-seg.user-near, .point-item.user-near')
+    .forEach(el => el.classList.remove('user-near'));
+}
+
+document.getElementById('loc-toggle-btn').addEventListener('click', () => {
+  const btn = document.getElementById('loc-toggle-btn');
+  const nowActive = btn.classList.toggle('active');
+  if (nowActive) {
+    startLocationTracking();
+  } else {
+    stopLocationTracking();
+  }
+});
+
 async function loadRoute(routeId) {
   const route = ROUTES.find(r => r.id === routeId);
   activeRouteId = routeId;
@@ -1414,6 +1546,7 @@ async function loadRoute(routeId) {
     document.getElementById('stat-distance').textContent = cache[routeId].distanceKm.toFixed(0) + ' km';
     clearStatus();
     refreshQuakeOverlay();
+    if (watchId != null && lastKnownPos) updateNearestPoint(lastKnownPos.lat, lastKnownPos.lon);
     return;
   }
 
@@ -1438,6 +1571,7 @@ async function loadRoute(routeId) {
     renderPoints(points);
     clearStatus();
     refreshQuakeOverlay();
+    if (watchId != null && lastKnownPos) updateNearestPoint(lastKnownPos.lat, lastKnownPos.lon);
   } catch (err) {
     console.error(err);
     setStatus('Error: ' + err.message + '. Es posible que el servidor demo de OSRM esté saturado — reintentá en unos segundos.', true);
