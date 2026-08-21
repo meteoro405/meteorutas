@@ -307,7 +307,6 @@
     color: var(--ink-dim);
     cursor: pointer;
     transition: all 0.12s ease;
-    margin-bottom: 14px;
   }
   .quake-toggle-btn:hover { border-color: var(--cuero); color: var(--cuero-dark); }
   .quake-toggle-btn.active {
@@ -520,7 +519,7 @@
     .ribbon-wrap { padding: 10px 14px 12px; }
     .layer-toggle { gap: 4px; margin-bottom: 8px; }
     .layer-btn { padding: 6px 10px; font-size: 11.5px; }
-    .quake-toggle-btn { padding: 5px 10px; font-size: 10.5px; margin-bottom: 8px; }
+    .quake-toggle-btn { padding: 5px 10px; font-size: 10.5px; }
     .ribbon-label { font-size: 14px; margin-bottom: 6px; }
     .ribbon { height: 24px; }
     .ribbon-ticks { font-size: 12.5px; margin-top: 6px; }
@@ -576,8 +575,8 @@
     <button class="layer-btn" data-layer="wind">💨 Viento</button>
     <button class="layer-btn" data-layer="alt">🏔️ Altitud</button>
     <button class="layer-btn" data-layer="precip">💧 Precipitaciones</button>
+    <button id="quake-toggle-btn" class="quake-toggle-btn" title="Mostrar/ocultar sismos recientes cerca de la ruta (USGS)">🌍 Sismos</button>
   </div>
-  <button id="quake-toggle-btn" class="quake-toggle-btn" title="Mostrar/ocultar sismos recientes cerca de la ruta (USGS)">🌍 Sismos</button>
   <div class="ribbon-label" id="ribbon-label">Riesgo de niebla a lo largo del trayecto</div>
   <div class="ribbon" id="ribbon"></div>
   <div class="ribbon-ticks">
@@ -744,6 +743,91 @@ const ROUTES = [
     waypoints: [
       { name: 'Junín',      lat: -34.5836, lon: -60.9720 },
       { name: 'San Rafael', lat: -34.6177, lon: -68.3301 },
+    ]
+  },
+  {
+    id: 'rn2',
+    number: 'RN2',
+    label: 'Buenos Aires ⇄ Mar del Plata',
+    waypoints: [
+      { name: 'Buenos Aires',  lat: -34.6037, lon: -58.3816 },
+      { name: 'Mar del Plata', lat: -38.0055, lon: -57.5426 },
+    ]
+  },
+  {
+    id: 'rn22',
+    number: 'RN22',
+    label: 'Pino Hachado ⇄ Bahía Blanca',
+    waypoints: [
+      { name: 'Paso Pino Hachado', lat: -38.6667, lon: -70.8667 },
+      { name: 'Bahía Blanca',      lat: -38.7183, lon: -62.2663 },
+    ]
+  },
+  {
+    id: 'rn23',
+    number: 'RN23',
+    label: 'Bariloche ⇄ Las Grutas',
+    waypoints: [
+      { name: 'Bariloche',  lat: -41.1335, lon: -71.3103 },
+      { name: 'Las Grutas', lat: -40.8058, lon: -65.0864 },
+    ]
+  },
+  {
+    id: 'rn25',
+    number: 'RN25',
+    label: 'Esquel ⇄ Rawson',
+    waypoints: [
+      { name: 'Esquel', lat: -42.9092, lon: -71.3167 },
+      { name: 'Rawson', lat: -43.3002, lon: -65.1023 },
+    ]
+  },
+  {
+    id: 'rn33',
+    number: 'RN33',
+    label: 'Bahía Blanca ⇄ Rosario',
+    waypoints: [
+      { name: 'Bahía Blanca',     lat: -38.7183, lon: -62.2663 },
+      { name: 'Tornquist',        lat: -38.1067, lon: -62.2306 },
+      { name: 'Pigüé',            lat: -37.6000, lon: -62.3833 },
+      { name: 'Guaminí',          lat: -37.0167, lon: -62.4167 },
+      { name: 'Trenque Lauquen',  lat: -35.9764, lon: -62.7333 },
+      { name: 'Rufino',           lat: -34.2667, lon: -62.7167 },
+      { name: 'Venado Tuerto',    lat: -33.7500, lon: -61.9667 },
+      { name: 'Rosario',          lat: -32.9468, lon: -60.6393 },
+    ]
+  },
+  {
+    id: 'rn35',
+    number: 'RN35',
+    label: 'Bahía Blanca ⇄ Río Cuarto',
+    waypoints: [
+      { name: 'Bahía Blanca',      lat: -38.7183, lon: -62.2663 },
+      { name: 'Santa Rosa',        lat: -36.6167, lon: -64.2833 },
+      { name: 'Realicó',           lat: -35.0333, lon: -64.2667 },
+      { name: 'Huinca Renancó',    lat: -34.8333, lon: -64.3667 },
+      { name: 'Vicuña Mackenna',   lat: -33.9167, lon: -64.4000 },
+      { name: 'Río Cuarto',        lat: -33.1301, lon: -64.3499 },
+    ]
+  },
+  {
+    id: 'rn205',
+    number: 'RN205',
+    label: 'Ezeiza ⇄ Bolívar',
+    waypoints: [
+      { name: 'Ezeiza',    lat: -34.8222, lon: -58.5358 },
+      { name: 'Cañuelas',  lat: -35.0517, lon: -58.7594 },
+      { name: 'Bolívar',   lat: -36.2320, lon: -61.1147 },
+    ]
+  },
+  {
+    id: 'rn288',
+    number: 'RN288',
+    label: 'Punta Quilla ⇄ Tres Lagos',
+    waypoints: [
+      { name: 'Punta Quilla',                lat: -50.1333, lon: -68.3167 },
+      { name: 'Puerto Santa Cruz',           lat: -50.0167, lon: -68.4833 },
+      { name: 'Comandante Luis Piedrabuena', lat: -49.9667, lon: -68.9333 },
+      { name: 'Tres Lagos',                  lat: -49.6333, lon: -71.5333 },
     ]
   },
 ];
