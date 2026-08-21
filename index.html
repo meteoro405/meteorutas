@@ -937,6 +937,7 @@ async function fetchWeatherForPoints(points) {
       apparentTemp: r.current ? r.current.apparent_temperature : null,
       windSpeed: r.current ? r.current.wind_speed_10m : null,
       windGust: r.current ? r.current.wind_gusts_10m : null,
+      altitude: typeof r.elevation === 'number' ? r.elevation : null,
       visibility
     };
   });
@@ -1036,7 +1037,8 @@ function renderPoints(points) {
         Punto de rocío: ${fmt(p.dewpoint, '°C')}<br>
         Humedad: ${fmt(p.humidity, '%', 0)}<br>
         Viento: ${fmt(p.windSpeed, ' km/h', 0)} · Ráfagas: ${fmt(p.windGust, ' km/h', 0)}<br>
-        Visibilidad: ${p.visibility != null ? Math.round(p.visibility) + ' m' : '—'}
+        Visibilidad: ${p.visibility != null ? Math.round(p.visibility) + ' m' : '—'}<br>
+        Altitud: ${p.altitude != null ? Math.round(p.altitude) + ' msnm' : '—'}
       </div>
     `);
     markers.push(marker);
@@ -1061,6 +1063,7 @@ function renderPoints(points) {
         <span>Viento: <b>${fmt(p.windSpeed, 'km/h', 0)}</b></span>
         <span>Ráfagas: <b>${fmt(p.windGust, 'km/h', 0)}</b></span>
         <span>Visib.: <b>${p.visibility != null ? Math.round(p.visibility) + 'm' : '—'}</b></span>
+        <span>Altitud: <b>${p.altitude != null ? Math.round(p.altitude) + 'msnm' : '—'}</b></span>
       </div>
     `;
     list.appendChild(item);
@@ -1161,14 +1164,26 @@ async function shareCurrentRoute() {
   const fullUrl = location.origin + location.pathname + '#' + buildHash(route.id);
   const origin = route.waypoints[0].name;
   const destination = route.waypoints[route.waypoints.length - 1].name;
-  const cached = cache[route.id];
-  const distancePart = cached ? `, ${cached.distanceKm.toFixed(0)} km` : '';
+
+  // Distance should always be available at this point since a route can't be
+  // "active" without having finished loading — but fall back to a fresh OSRM
+  // call just in case (e.g. cache was cleared) so the message is never missing it.
+  let distanceKm = cache[route.id] ? cache[route.id].distanceKm : null;
+  if (distanceKm == null) {
+    try {
+      const routeData = await fetchRoute(route.waypoints);
+      distanceKm = routeData.distance / 1000;
+    } catch (err) {
+      distanceKm = null;
+    }
+  }
+  const distanceText = distanceKm != null ? `${distanceKm.toFixed(0)} km` : 'a confirmar';
 
   const shareUrl = await shortenUrl(fullUrl);
 
   const lines = [
     `🌦️ *Condiciones de la ruta en tiempo real.*`,
-    `Conocé el estado de la ruta entre ${origin} ⇄ ${destination}${distancePart} ingresando acá.`,
+    `Conocé el estado de la ruta entre "${origin}" ⇄ "${destination}", Distancia: ${distanceText}, haciendo clic acá.`,
     '',
     shareUrl,
   ];
