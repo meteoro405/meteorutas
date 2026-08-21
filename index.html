@@ -447,9 +447,25 @@
     border: 1px solid var(--line-strong);
   }
   .leaflet-popup-tip { background: var(--pergamino); }
-  .popup-title { font-family: var(--font-mono); font-size: 14px; color: var(--cuero); margin-bottom: 5px; font-weight: 600; }
-  .popup-risk { font-weight: 700; margin-bottom: 7px; font-family: var(--font-display); font-size: 16px; }
-  .popup-detail { font-family: var(--font-mono); font-size: 13.5px; color: var(--ink-dim); line-height: 1.7; }
+  .popup-title { font-family: var(--font-mono); font-size: 13px; color: var(--cuero); margin-bottom: 6px; font-weight: 600; }
+  .popup-badges {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .popup-detail {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 10px;
+  }
+  .popup-detail b { color: var(--ink); font-weight: 600; }
 
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: var(--pergamino-2); }
@@ -537,6 +553,7 @@
     <button class="layer-btn" data-layer="ice">🧊 Hielo</button>
     <button class="layer-btn" data-layer="temp">🌡️ Temp.</button>
     <button class="layer-btn" data-layer="wind">💨 Viento</button>
+    <button class="layer-btn" data-layer="alt">🏔️ Altitud</button>
   </div>
   <div class="ribbon-label" id="ribbon-label">Riesgo de niebla a lo largo del trayecto</div>
   <div class="ribbon" id="ribbon"></div>
@@ -739,6 +756,18 @@ const WIND_RISK = {
   unknown:  { label: "Sin datos",         hex: "#a79a82" },
 };
 
+// Hypsometric-style scale: green at low elevation, warming through amber and
+// terracotta, ending in dark brown/near-black at the highest bands.
+const ALT_RISK = {
+  b0:      { label: "0–1000 msnm",    hex: "#5c7a4e" },
+  b1:      { label: "1000–2000 msnm", hex: "#8a9b4e" },
+  b2:      { label: "2000–3000 msnm", hex: "#c68a2e" },
+  b3:      { label: "3000–4000 msnm", hex: "#b25a2e" },
+  b4:      { label: "4000–5000 msnm", hex: "#8b2e2e" },
+  b5:      { label: "+5000 msnm",     hex: "#3c2413" },
+  unknown: { label: "Sin datos",      hex: "#a79a82" },
+};
+
 // Layer currently driving the ribbon color and map marker color.
 // 'fog' -> classifyRisk()+RISK, 'ice' -> classifyIce()+ICE_RISK,
 // 'temp' -> classifyTemp()+TEMP_RISK, 'wind' -> classifyWind()+WIND_RISK.
@@ -748,6 +777,7 @@ function currentLayerConfig() {
   if (activeLayer === 'ice')  return { classify: classifyIce,  map: ICE_RISK };
   if (activeLayer === 'temp') return { classify: classifyTemp, map: TEMP_RISK };
   if (activeLayer === 'wind') return { classify: classifyWind, map: WIND_RISK };
+  if (activeLayer === 'alt')  return { classify: classifyAltitude, map: ALT_RISK };
   return { classify: classifyRisk, map: RISK };
 }
 
@@ -849,6 +879,17 @@ function classifyWind(point) {
   if (w >= 70) return 'strong';
   if (w >= 50) return 'moderate';
   return 'clear';
+}
+
+function classifyAltitude(point) {
+  const a = point.altitude;
+  if (a == null) return 'unknown';
+  if (a < 1000) return 'b0';
+  if (a < 2000) return 'b1';
+  if (a < 3000) return 'b2';
+  if (a < 4000) return 'b3';
+  if (a < 5000) return 'b4';
+  return 'b5';
 }
 
 async function fetchRoute(waypoints) {
@@ -1010,6 +1051,7 @@ function renderPoints(points) {
     const iceInfo = ICE_RISK[classifyIce(p)];
     const tempInfo = TEMP_RISK[classifyTemp(p)];
     const windInfo = WIND_RISK[classifyWind(p)];
+    const altInfo = ALT_RISK[classifyAltitude(p)];
 
     const seg = document.createElement('div');
     seg.className = 'ribbon-seg';
@@ -1025,22 +1067,30 @@ function renderPoints(points) {
       fillOpacity: 0.95
     }).addTo(map);
 
+    // Open-Meteo's visibility formula can return values well beyond what's
+    // practically meaningful (e.g. 40,000+ m on very clear/dry air) — cap the
+    // display so it doesn't read as a data error.
+    const visText = p.visibility == null ? '—' : p.visibility >= 20000 ? '20+ km' : Math.round(p.visibility) + ' m';
+
     marker.bindPopup(`
       <div class="popup-title">PUNTO ${i+1} · KM ${Math.round(p.km)}${p.waypointTag ? ' · ' + p.waypointTag.toUpperCase() : ''}</div>
-      <div class="popup-risk" style="color:${fogInfo.hex}">🌫️ Niebla: ${fogInfo.label}</div>
-      <div class="popup-risk" style="color:${iceInfo.hex}; margin-top:-2px;">🧊 Hielo: ${iceInfo.label}</div>
-      <div class="popup-risk" style="color:${tempInfo.hex}; margin-top:-2px;">🌡️ Temperatura: ${tempInfo.label}</div>
-      <div class="popup-risk" style="color:${windInfo.hex}; margin-top:-2px;">💨 Viento: ${windInfo.label}</div>
-      <div class="popup-detail">
-        Temp: ${fmt(p.temp, '°C')}<br>
-        Sens. térmica: ${fmt(p.apparentTemp, '°C')}<br>
-        Punto de rocío: ${fmt(p.dewpoint, '°C')}<br>
-        Humedad: ${fmt(p.humidity, '%', 0)}<br>
-        Viento: ${fmt(p.windSpeed, ' km/h', 0)} · Ráfagas: ${fmt(p.windGust, ' km/h', 0)}<br>
-        Visibilidad: ${p.visibility != null ? Math.round(p.visibility) + ' m' : '—'}<br>
-        Altitud: ${p.altitude != null ? Math.round(p.altitude) + ' msnm' : '—'}
+      <div class="popup-badges">
+        <span style="color:${fogInfo.hex}">🌫️ ${fogInfo.label}</span>
+        <span style="color:${iceInfo.hex}">🧊 ${iceInfo.label}</span>
+        <span style="color:${tempInfo.hex}">🌡️ ${tempInfo.label}</span>
+        <span style="color:${windInfo.hex}">💨 ${windInfo.label}</span>
       </div>
-    `);
+      <div class="popup-detail">
+        <span>Temp: <b>${fmt(p.temp, '°C')}</b></span>
+        <span>Sens.: <b>${fmt(p.apparentTemp, '°C')}</b></span>
+        <span>P. rocío: <b>${fmt(p.dewpoint, '°C')}</b></span>
+        <span>Humedad: <b>${fmt(p.humidity, '%', 0)}</b></span>
+        <span>Viento: <b>${fmt(p.windSpeed, 'km/h', 0)}</b></span>
+        <span>Ráfagas: <b>${fmt(p.windGust, 'km/h', 0)}</b></span>
+        <span>Visib.: <b>${visText}</b></span>
+        <span>Altitud: <b>${p.altitude != null ? Math.round(p.altitude) + 'msnm' : '—'}</b></span>
+      </div>
+    `, { maxWidth: 260, minWidth: 220, maxHeight: 320 });
     markers.push(marker);
 
     const item = document.createElement('div');
@@ -1053,6 +1103,7 @@ function renderPoints(points) {
           <span class="risk-badge" style="background:${iceInfo.hex}22; color:${iceInfo.hex}; border:1px solid ${iceInfo.hex}55" title="Hielo">🧊 ${iceInfo.label}</span>
           <span class="risk-badge" style="background:${tempInfo.hex}22; color:${tempInfo.hex}; border:1px solid ${tempInfo.hex}55" title="Temperatura extrema">🌡️ ${tempInfo.label}</span>
           <span class="risk-badge" style="background:${windInfo.hex}22; color:${windInfo.hex}; border:1px solid ${windInfo.hex}55" title="Viento">💨 ${windInfo.label}</span>
+          <span class="risk-badge" style="background:${altInfo.hex}22; color:${altInfo.hex}; border:1px solid ${altInfo.hex}55" title="Altitud">🏔️ ${altInfo.label}</span>
         </span>
       </div>
       <div class="point-detail">
@@ -1062,7 +1113,7 @@ function renderPoints(points) {
         <span>Humedad: <b>${fmt(p.humidity, '%', 0)}</b></span>
         <span>Viento: <b>${fmt(p.windSpeed, 'km/h', 0)}</b></span>
         <span>Ráfagas: <b>${fmt(p.windGust, 'km/h', 0)}</b></span>
-        <span>Visib.: <b>${p.visibility != null ? Math.round(p.visibility) + 'm' : '—'}</b></span>
+        <span>Visib.: <b>${visText}</b></span>
         <span>Altitud: <b>${p.altitude != null ? Math.round(p.altitude) + 'msnm' : '—'}</b></span>
       </div>
     `;
@@ -1212,6 +1263,7 @@ document.getElementById('layer-toggle').addEventListener('click', (e) => {
     layer === 'ice' ? 'Riesgo de hielo / escarcha a lo largo del trayecto' :
     layer === 'temp' ? 'Temperaturas extremas a lo largo del trayecto' :
     layer === 'wind' ? 'Viento a lo largo del trayecto' :
+    layer === 'alt' ? 'Altitud a lo largo del trayecto' :
     'Riesgo de niebla a lo largo del trayecto';
   if (cache[activeRouteId]) {
     renderPoints(cache[activeRouteId].points);
