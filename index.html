@@ -576,7 +576,7 @@
   <div class="eyebrow" id="route-subtitle">Seleccioná un corredor</div>
   <div class="stats-row">
     <div class="stat">Distancia: <b id="stat-distance">—</b></div>
-    <div class="stat">Puntos de muestreo: <b>20</b></div>
+    <div class="stat">Puntos de muestreo: <b id="stat-points">20</b></div>
   </div>
   <div class="custom-route-bar">
     <input type="text" id="input-desde" class="route-input" placeholder="Desde…" autocomplete="off">
@@ -595,8 +595,8 @@
     <button class="layer-btn" data-layer="ice">🧊 Hielo</button>
     <button class="layer-btn" data-layer="temp">🌡️ Temperatura</button>
     <button class="layer-btn" data-layer="wind">💨 Viento</button>
-    <button class="layer-btn" data-layer="alt">🏔️ Altitud</button>
-    <button class="layer-btn" data-layer="precip">💧 Precipitaciones</button>
+    <button class="layer-btn" data-layer="alt">🏔️ Alt.</button>
+    <button class="layer-btn" data-layer="precip">💧 Precip.</button>
     <button id="quake-toggle-btn" class="quake-toggle-btn" title="Mostrar/ocultar sismos recientes cerca de la ruta (USGS)">🌍 Sismos</button>
     <button id="loc-toggle-btn" class="quake-toggle-btn" title="Mostrar tu ubicación en tiempo real sobre el mapa">📍 Mi ubicación</button>
   </div>
@@ -616,7 +616,17 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
-const N_POINTS = 20;
+const MIN_POINTS = 20;
+const MAX_POINTS = 50;
+
+// Longer routes get more sample points so spacing doesn't get too coarse —
+// short routes (like RN2, ~414km) stay at the 20-point floor since that's
+// already dense enough; very long ones (RN3 to Ushuaia, RN40, ~3000-5000km)
+// scale up toward the cap. Roughly one point per 80km within that range.
+function sampleCountFor(distanceKm) {
+  const n = Math.round(distanceKm / 80);
+  return Math.min(MAX_POINTS, Math.max(MIN_POINTS, n));
+}
 
 // Each route is a sequence of waypoints for OSRM (origin -> via points -> destination).
 // Via points force the routing engine through cities/corridors that the shortest-path
@@ -1544,6 +1554,7 @@ async function loadRoute(routeId) {
     renderRouteOnMap(cache[routeId].coords);
     renderPoints(cache[routeId].points);
     document.getElementById('stat-distance').textContent = cache[routeId].distanceKm.toFixed(0) + ' km';
+    document.getElementById('stat-points').textContent = cache[routeId].points.length;
     clearStatus();
     refreshQuakeOverlay();
     if (watchId != null && lastKnownPos) updateNearestPoint(lastKnownPos.lat, lastKnownPos.lon);
@@ -1561,8 +1572,11 @@ async function loadRoute(routeId) {
 
     renderRouteOnMap(coords);
 
-    setStatus(`Muestreando 20 puntos a lo largo de ${displayName}…`);
-    const { samples } = sampleAlongRoute(coords, N_POINTS, route.waypoints);
+    const nPoints = sampleCountFor(distanceKm);
+    document.getElementById('stat-points').textContent = nPoints;
+
+    setStatus(`Muestreando ${nPoints} puntos a lo largo de ${displayName}…`);
+    const { samples } = sampleAlongRoute(coords, nPoints, route.waypoints);
 
     setStatus('Consultando condiciones meteorológicas en Open-Meteo…');
     const points = await fetchWeatherForPoints(samples);
