@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>MeteoRutas · La Ruta en Tiempo Real · By Meteoro405</title>
+<title>MeteoRutas · La Ruta en Tiempo Real · By Ariel Ferro</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#7a3a18">
 <link rel="icon" href="icons/icon-192.png">
@@ -155,7 +155,7 @@
 
   .stat {
     font-family: var(--font-mono);
-    font-size: 12.5px;
+    font-size: 14px;
     color: var(--ink-dim);
   }
 
@@ -438,9 +438,9 @@
     border: 1px solid var(--line-strong);
   }
   .leaflet-popup-tip { background: var(--pergamino); }
-  .popup-title { font-family: var(--font-mono); font-size: 12px; color: var(--cuero); margin-bottom: 4px; font-weight: 600; }
-  .popup-risk { font-weight: 700; margin-bottom: 6px; font-family: var(--font-display); }
-  .popup-detail { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-dim); line-height: 1.6; }
+  .popup-title { font-family: var(--font-mono); font-size: 14px; color: var(--cuero); margin-bottom: 5px; font-weight: 600; }
+  .popup-risk { font-weight: 700; margin-bottom: 7px; font-family: var(--font-display); font-size: 16px; }
+  .popup-detail { font-family: var(--font-mono); font-size: 13.5px; color: var(--ink-dim); line-height: 1.7; }
 
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: var(--pergamino-2); }
@@ -463,7 +463,7 @@
     .eyebrow { font-size: 13.5px; margin: 6px 0 0; }
 
     .stats-row { margin-top: 6px; gap: 14px; }
-    .stat { font-size: 11px; }
+    .stat { font-size: 12.5px; }
 
     .custom-route-bar { margin-top: 8px; gap: 6px; }
     .route-input { padding: 7px 10px; font-size: 12px; }
@@ -474,7 +474,7 @@
 
     .ribbon-wrap { padding: 10px 14px 12px; }
     .layer-toggle { gap: 4px; margin-bottom: 8px; }
-    .layer-btn { padding: 4px 7px; font-size: 9px; }
+    .layer-btn { padding: 5px 9px; font-size: 10.5px; }
     .ribbon-label { font-size: 14px; margin-bottom: 6px; }
     .ribbon { height: 24px; }
     .ribbon-ticks { font-size: 12.5px; margin-top: 6px; }
@@ -494,7 +494,7 @@
 
 <header>
   <div class="brand-row">
-    <h1>LA RUTA EN TIEMPO REAL <span class="brand-by">By Meteoro405</span></h1>
+    <h1>LA RUTA EN TIEMPO REAL <span class="brand-by">By Ariel Ferro</span></h1>
     <div class="header-actions">
       <button id="share-btn" class="share-btn" title="Enviar esta ruta por WhatsApp">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1-.3-.1-.5-.1-.7.1s-.8 1-.9 1.2c-.2.2-.3.2-.6.1s-1.4-.5-2.6-1.6c-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.3 0-.5s-.7-1.7-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.3 4.7.7.3 1.3.5 1.8.7.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.4 5.1L2 22l5.1-1.3c1.4.8 3.1 1.2 4.9 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18.2c-1.6 0-3.1-.4-4.5-1.2l-.3-.2-3.3.9.9-3.2-.2-.3C3.8 14.7 3.3 13.4 3.3 12c0-4.8 3.9-8.7 8.7-8.7s8.7 3.9 8.7 8.7-3.9 8.7-8.7 8.7z"/></svg>
@@ -1017,10 +1017,10 @@ function renderPoints(points) {
 
     marker.bindPopup(`
       <div class="popup-title">PUNTO ${i+1} · KM ${Math.round(p.km)}${p.waypointTag ? ' · ' + p.waypointTag.toUpperCase() : ''}</div>
-      <div class="popup-risk" style="color:${fogInfo.hex}">🌫️ ${fogInfo.label}</div>
-      <div class="popup-risk" style="color:${iceInfo.hex}; margin-top:-2px;">🧊 ${iceInfo.label}</div>
-      <div class="popup-risk" style="color:${tempInfo.hex}; margin-top:-2px;">🌡️ ${tempInfo.label}</div>
-      <div class="popup-risk" style="color:${windInfo.hex}; margin-top:-2px;">💨 ${windInfo.label}</div>
+      <div class="popup-risk" style="color:${fogInfo.hex}">🌫️ Niebla: ${fogInfo.label}</div>
+      <div class="popup-risk" style="color:${iceInfo.hex}; margin-top:-2px;">🧊 Hielo: ${iceInfo.label}</div>
+      <div class="popup-risk" style="color:${tempInfo.hex}; margin-top:-2px;">🌡️ Temperatura: ${tempInfo.label}</div>
+      <div class="popup-risk" style="color:${windInfo.hex}; margin-top:-2px;">💨 Viento: ${windInfo.label}</div>
       <div class="popup-detail">
         Temp: ${fmt(p.temp, '°C')}<br>
         Sens. térmica: ${fmt(p.apparentTemp, '°C')}<br>
@@ -1136,46 +1136,15 @@ function shareCurrentRoute() {
   if (!route) return;
 
   const shareUrl = location.origin + location.pathname + '#' + buildHash(route.id);
-  let lines = [
-    `🌫️ *Condiciones de niebla en tiempo real*`,
-    route.number ? `${route.number} · ${route.label}` : route.label,
+  const origin = route.waypoints[0].name;
+  const destination = route.waypoints[route.waypoints.length - 1].name;
+
+  const lines = [
+    `🌦️ *Condiciones de la ruta en tiempo real*`,
+    `Conocé el estado de ${origin} ⇄ ${destination} ingresando acá:`,
+    '',
+    shareUrl,
   ];
-
-  const cached = cache[route.id];
-  if (cached) {
-    lines.push(`Distancia: ${cached.distanceKm.toFixed(0)} km`);
-    const counts = { clear: 0, moderate: 0, probable: 0, dense: 0, unknown: 0 };
-    cached.points.forEach(p => counts[classifyRisk(p)]++);
-    const alert = counts.dense + counts.probable;
-    if (alert > 0) {
-      lines.push(`⚠️ ${alert} de ${cached.points.length} puntos con niebla probable o densa`);
-    } else {
-      lines.push(`✅ Sin alertas de niebla en los ${cached.points.length} puntos muestreados`);
-    }
-
-    const iceCounts = { clear: 0, watch: 0, risk: 0, severe: 0, unknown: 0 };
-    cached.points.forEach(p => iceCounts[classifyIce(p)]++);
-    const iceAlert = iceCounts.severe + iceCounts.risk;
-    if (iceAlert > 0) {
-      lines.push(`🧊 ${iceAlert} de ${cached.points.length} puntos con riesgo de hielo`);
-    }
-
-    const tempCounts = { extreme_cold: 0, cold: 0, clear: 0, heat: 0, extreme_heat: 0, unknown: 0 };
-    cached.points.forEach(p => tempCounts[classifyTemp(p)]++);
-    const tempAlert = tempCounts.extreme_cold + tempCounts.extreme_heat;
-    if (tempAlert > 0) {
-      lines.push(`🌡️ ${tempAlert} de ${cached.points.length} puntos con temperatura extrema`);
-    }
-
-    const windCounts = { clear: 0, moderate: 0, strong: 0, severe: 0, unknown: 0 };
-    cached.points.forEach(p => windCounts[classifyWind(p)]++);
-    const windAlert = windCounts.strong + windCounts.severe;
-    if (windAlert > 0) {
-      lines.push(`💨 ${windAlert} de ${cached.points.length} puntos con viento fuerte`);
-    }
-  }
-
-  lines.push('', shareUrl);
 
   const text = encodeURIComponent(lines.join('\n'));
   window.open(`https://wa.me/?text=${text}`, '_blank');
