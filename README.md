@@ -57,6 +57,12 @@ El `index.html` ya incluye el script de Cloudflare Web Analytics con un token de
 4. En `index.html`, buscá `YOUR_CLOUDFLARE_TOKEN` (dentro del `<script>` de Cloudflare, cerca del `</head>`) y reemplazalo por tu token real.
 5. Subí el cambio. A los pocos minutos vas a ver datos en el dashboard de Cloudflare — visitas, países, dispositivos, todo sin cookies ni datos personales.
 
+## Compartir por WhatsApp
+
+Al tocar "Compartir", la app arma un mensaje corto invitando a abrir el link (no un informe completo), y acorta la URL con [is.gd](https://is.gd) (gratis, sin key) para que no aparezca el link larguísimo de GitHub Pages. Si `is.gd` no responde por algún motivo, cae de nuevo al link completo sin romper el flujo.
+
+**Sobre el dominio que muestra la vista previa de WhatsApp**: WhatsApp genera automáticamente una tarjeta de vista previa con el dominio del link que se comparte — eso es parte fija de la interfaz de WhatsApp y no se puede ocultar. Con el acortador, ese dominio pasa a ser `is.gd` en vez de `TU-USUARIO.github.io`, que es lo más parecido a "sacarlo" que se puede lograr. Las etiquetas Open Graph (`og:title`, `og:description`, `og:image`) en el `<head>` sí controlan el título y la descripción que aparecen arriba de ese dominio en la tarjeta — **recordá reemplazar `YOUR-USERNAME` en `og:image` por tu usuario real de GitHub una vez publicado el sitio**, o la imagen de la vista previa no va a cargar.
+
 ## Estructura
 
 ```

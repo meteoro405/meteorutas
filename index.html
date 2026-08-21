@@ -11,6 +11,15 @@
 <meta name="theme-color" content="#7a3a18">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<!--
+  Open Graph tags: control the title/description WhatsApp (and other apps)
+  show in the link preview card. og:image needs an ABSOLUTE url to work —
+  replace YOUR-USERNAME below once the site is deployed on GitHub Pages.
+-->
+<meta property="og:title" content="MeteoRutas · La Ruta en Tiempo Real">
+<meta property="og:description" content="Niebla, hielo, viento y temperaturas extremas en rutas argentinas, en tiempo real.">
+<meta property="og:image" content="https://YOUR-USERNAME.github.io/meteorutas/icons/icon-512.png">
+<meta property="og:type" content="website">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -137,7 +146,7 @@
     color: var(--cuero-dark);
     background: transparent;
     border: 1px solid var(--cuero);
-    padding: 8px 14px;
+    padding: 9px 16px;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.12s ease;
@@ -271,8 +280,8 @@
   .layer-btn {
     font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 11px;
-    padding: 6px 10px;
+    font-size: 13px;
+    padding: 7px 13px;
     border-radius: 100px;
     border: 1px solid var(--line-strong);
     background: var(--pergamino);
@@ -467,14 +476,14 @@
 
     .custom-route-bar { margin-top: 8px; gap: 6px; }
     .route-input { padding: 7px 10px; font-size: 12px; }
-    .search-route-btn { padding: 7px 12px; font-size: 11px; margin-left: auto; }
+    .search-route-btn { padding: 6px 10px; font-size: 10.5px; margin-left: auto; }
 
     .tabs { margin-top: 8px; }
     .tab { padding: 6px 11px 8px; font-size: 11px; }
 
     .ribbon-wrap { padding: 10px 14px 12px; }
     .layer-toggle { gap: 4px; margin-bottom: 8px; }
-    .layer-btn { padding: 5px 9px; font-size: 10.5px; }
+    .layer-btn { padding: 6px 10px; font-size: 11.5px; }
     .ribbon-label { font-size: 14px; margin-bottom: 6px; }
     .ribbon { height: 24px; }
     .ribbon-ticks { font-size: 12.5px; margin-top: 6px; }
@@ -1131,17 +1140,35 @@ async function loadRoute(routeId) {
   }
 }
 
-function shareCurrentRoute() {
+// Shortens a URL via is.gd (free, no key, supports CORS). Falls back to the
+// original URL if the request fails for any reason (offline, blocked, etc.)
+// — this is a cosmetic nicety, never something the share flow should block on.
+async function shortenUrl(url) {
+  try {
+    const res = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(url)}`);
+    if (!res.ok) return url;
+    const short = (await res.text()).trim();
+    return short.startsWith('http') ? short : url;
+  } catch (err) {
+    return url;
+  }
+}
+
+async function shareCurrentRoute() {
   const route = ROUTES.find(r => r.id === activeRouteId);
   if (!route) return;
 
-  const shareUrl = location.origin + location.pathname + '#' + buildHash(route.id);
+  const fullUrl = location.origin + location.pathname + '#' + buildHash(route.id);
   const origin = route.waypoints[0].name;
   const destination = route.waypoints[route.waypoints.length - 1].name;
+  const cached = cache[route.id];
+  const distancePart = cached ? `, ${cached.distanceKm.toFixed(0)} km` : '';
+
+  const shareUrl = await shortenUrl(fullUrl);
 
   const lines = [
-    `🌦️ *Condiciones de la ruta en tiempo real*`,
-    `Conocé el estado de ${origin} ⇄ ${destination} ingresando acá:`,
+    `🌦️ *Condiciones de la ruta en tiempo real.*`,
+    `Conocé el estado de la ruta entre ${origin} ⇄ ${destination}${distancePart} ingresando acá.`,
     '',
     shareUrl,
   ];
