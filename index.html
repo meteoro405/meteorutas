@@ -296,6 +296,26 @@
     color: var(--pergamino);
   }
 
+  .quake-toggle-btn {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 7px 13px;
+    border-radius: 100px;
+    border: 1px dashed var(--line-strong);
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    margin-bottom: 14px;
+  }
+  .quake-toggle-btn:hover { border-color: var(--cuero); color: var(--cuero-dark); }
+  .quake-toggle-btn.active {
+    background: var(--ink);
+    border: 1px solid var(--ink);
+    color: var(--pergamino);
+  }
+
   .ribbon {
     display: flex;
     height: 34px;
@@ -500,6 +520,7 @@
     .ribbon-wrap { padding: 10px 14px 12px; }
     .layer-toggle { gap: 4px; margin-bottom: 8px; }
     .layer-btn { padding: 6px 10px; font-size: 11.5px; }
+    .quake-toggle-btn { padding: 5px 10px; font-size: 10.5px; margin-bottom: 8px; }
     .ribbon-label { font-size: 14px; margin-bottom: 6px; }
     .ribbon { height: 24px; }
     .ribbon-ticks { font-size: 12.5px; margin-top: 6px; }
@@ -556,6 +577,7 @@
     <button class="layer-btn" data-layer="alt">🏔️ Altitud</button>
     <button class="layer-btn" data-layer="precip">💧 Precipitaciones</button>
   </div>
+  <button id="quake-toggle-btn" class="quake-toggle-btn" title="Mostrar/ocultar sismos recientes cerca de la ruta (USGS)">🌍 Sismos</button>
   <div class="ribbon-label" id="ribbon-label">Riesgo de niebla a lo largo del trayecto</div>
   <div class="ribbon" id="ribbon"></div>
   <div class="ribbon-ticks">
@@ -1017,12 +1039,61 @@ async function fetchWeatherForPoints(points) {
   });
 }
 
+// ---------- Seismic activity (USGS, free, no key) ----------
+// Unlike the six weather layers, earthquakes aren't a value-per-route-point —
+// they're independent events near the corridor, so they render as their own
+// map markers rather than coloring the ribbon/points.
+const QUAKE_TIERS = [
+  { min: 6,   hex: '#8b2e2e', label: 'Mayor (M6+)' },
+  { min: 5,   hex: '#b25a2e', label: 'Fuerte (M5–5.9)' },
+  { min: 4,   hex: '#c68a2e', label: 'Moderado (M4–4.9)' },
+  { min: -10, hex: '#5c7a4e', label: 'Menor (<M4)' },
+];
+function quakeTier(mag) {
+  return QUAKE_TIERS.find(t => mag >= t.min) || QUAKE_TIERS[QUAKE_TIERS.length - 1];
+}
+
+// Bounding box around the route's actual geometry (not just endpoints), with
+// padding so nearby seismic activity off the exact line still shows up.
+async function fetchNearbyQuakes(coords) {
+  let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+  coords.forEach(([lon, lat]) => {
+    minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
+    minLon = Math.min(minLon, lon); maxLon = Math.max(maxLon, lon);
+  });
+  const pad = 1.5; // degrees
+  minLat -= pad; maxLat += pad; minLon -= pad; maxLon += pad;
+
+  const end = new Date();
+  const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000); // last 30 days
+  const fmtDate = d => d.toISOString().slice(0, 10);
+
+  const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson` +
+    `&starttime=${fmtDate(start)}&endtime=${fmtDate(end)}&minmagnitude=3` +
+    `&minlatitude=${minLat.toFixed(2)}&maxlatitude=${maxLat.toFixed(2)}` +
+    `&minlongitude=${minLon.toFixed(2)}&maxlongitude=${maxLon.toFixed(2)}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('USGS respondió ' + res.status);
+  const data = await res.json();
+  return data.features.map(f => ({
+    mag: f.properties.mag,
+    place: f.properties.place,
+    time: f.properties.time,
+    depth: f.geometry.coordinates[2],
+    lon: f.geometry.coordinates[0],
+    lat: f.geometry.coordinates[1],
+  }));
+}
+
 function fmt(v, unit, digits=1) {
   if (v == null || isNaN(v)) return '—';
   return v.toFixed(digits) + (unit || '');
 }
 
 let map, markers = [], routeLine = null;
+let quakeMarkers = [], quakesVisible = false;
+const quakeCache = {}; // routeId -> quake events array
 const cache = {}; // routeId -> { points, distanceKm, coords }
 let activeRouteId = null;
 
@@ -1187,6 +1258,59 @@ function parseHash() {
   return { route: params.get('route'), from: params.get('from'), to: params.get('to') };
 }
 
+// Clears old quake markers and, if the toggle is on, fetches/renders quakes
+// for the currently active route's bounding box. Cached per route so
+// switching tabs back and forth doesn't re-hit USGS every time.
+async function refreshQuakeOverlay() {
+  quakeMarkers.forEach(m => map.removeLayer(m));
+  quakeMarkers = [];
+  if (!quakesVisible) return;
+
+  const routeCache = cache[activeRouteId];
+  if (!routeCache) return;
+
+  let quakes = quakeCache[activeRouteId];
+  if (!quakes) {
+    try {
+      setStatus('Consultando actividad sísmica cerca de la ruta (USGS)…');
+      quakes = await fetchNearbyQuakes(routeCache.coords);
+      quakeCache[activeRouteId] = quakes;
+      clearStatus();
+    } catch (err) {
+      console.error(err);
+      setStatus('No se pudo consultar actividad sísmica: ' + err.message, true);
+      return;
+    }
+  }
+
+  quakes.forEach(q => {
+    const tier = quakeTier(q.mag);
+    const marker = L.circleMarker([q.lat, q.lon], {
+      radius: 5 + Math.max(q.mag, 0) * 2,
+      color: '#3c2413',
+      weight: 1,
+      fillColor: tier.hex,
+      fillOpacity: 0.7
+    }).addTo(map);
+    const when = new Date(q.time).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    marker.bindPopup(`
+      <div class="popup-title">🌍 SISMO M${q.mag.toFixed(1)}</div>
+      <div style="font-family:var(--font-mono); font-size:12.5px; color:var(--ink-dim); line-height:1.6;">
+        ${q.place}<br>
+        Profundidad: <b style="color:var(--ink)">${Math.round(q.depth)} km</b><br>
+        Fecha: <b style="color:var(--ink)">${when}</b>
+      </div>
+    `);
+    quakeMarkers.push(marker);
+  });
+}
+
+document.getElementById('quake-toggle-btn').addEventListener('click', () => {
+  quakesVisible = !quakesVisible;
+  document.getElementById('quake-toggle-btn').classList.toggle('active', quakesVisible);
+  refreshQuakeOverlay();
+});
+
 async function loadRoute(routeId) {
   const route = ROUTES.find(r => r.id === routeId);
   activeRouteId = routeId;
@@ -1205,6 +1329,7 @@ async function loadRoute(routeId) {
     renderPoints(cache[routeId].points);
     document.getElementById('stat-distance').textContent = cache[routeId].distanceKm.toFixed(0) + ' km';
     clearStatus();
+    refreshQuakeOverlay();
     return;
   }
 
@@ -1228,6 +1353,7 @@ async function loadRoute(routeId) {
     cache[routeId] = { points, distanceKm, coords };
     renderPoints(points);
     clearStatus();
+    refreshQuakeOverlay();
   } catch (err) {
     console.error(err);
     setStatus('Error: ' + err.message + '. Es posible que el servidor demo de OSRM esté saturado — reintentá en unos segundos.', true);

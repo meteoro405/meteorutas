@@ -63,6 +63,12 @@ Al tocar "Compartir", la app arma un mensaje corto invitando a abrir el link (no
 
 **Sobre el dominio que muestra la vista previa de WhatsApp**: WhatsApp genera automáticamente una tarjeta de vista previa con el dominio del link que se comparte — eso es parte fija de la interfaz de WhatsApp y no se puede ocultar. Con el acortador, ese dominio pasa a ser `is.gd` en vez de `TU-USUARIO.github.io`, que es lo más parecido a "sacarlo" que se puede lograr. Las etiquetas Open Graph (`og:title`, `og:description`, `og:image`) en el `<head>` sí controlan el título y la descripción que aparecen arriba de ese dominio en la tarjeta — **recordá reemplazar `YOUR-USERNAME` en `og:image` por tu usuario real de GitHub una vez publicado el sitio**, o la imagen de la vista previa no va a cargar.
 
+## Capas de datos
+
+Seis capas meteorológicas por punto de ruta (Niebla, Hielo, Temperatura, Viento, Altitud, Precipitaciones), todas desde una sola llamada a Open-Meteo — gratis, sin key.
+
+Además, un botón independiente **"🌍 Sismos"** superpone actividad sísmica reciente (últimos 30 días, magnitud ≥ 3) cerca de la ruta activa, usando la API pública de USGS (gratis, sin key). A diferencia de las seis capas anteriores, los sismos no son un valor por punto de la ruta — son eventos independientes, así que se muestran como marcadores propios en el mapa (coloreados por magnitud) en vez de colorear la cinta de riesgo. Se puede activar junto con cualquier otra capa.
+
 ## Estructura
 
 ```
