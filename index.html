@@ -554,6 +554,7 @@
     <button class="layer-btn" data-layer="temp">🌡️ Temp.</button>
     <button class="layer-btn" data-layer="wind">💨 Viento</button>
     <button class="layer-btn" data-layer="alt">🏔️ Alt.</button>
+    <button class="layer-btn" data-layer="precip">💧 Precip.</button>
   </div>
   <div class="ribbon-label" id="ribbon-label">Riesgo de niebla a lo largo del trayecto</div>
   <div class="ribbon" id="ribbon"></div>
@@ -770,16 +771,30 @@ const ALT_RISK = {
   unknown: { label: "Sin datos",      hex: "#a79a82" },
 };
 
+// Rain intensity tiers follow standard meteorological mm/h bands. Snow is
+// broken out separately (rather than folded into "heavy") since it's a
+// different hazard on the road regardless of how many mm it represents.
+const PRECIP_RISK = {
+  clear:      { label: "Sin precipitación", hex: "#5c7a4e" },
+  light:      { label: "Lluvia débil",      hex: "#7a9bb0" },
+  moderate:   { label: "Lluvia moderada",   hex: "#4a6f8a" },
+  heavy:      { label: "Lluvia intensa",    hex: "#2b3f5c" },
+  snow:       { label: "Nieve",             hex: "#9fb8c9" },
+  heavy_snow: { label: "Nevada intensa",    hex: "#5b86a8" },
+  unknown:    { label: "Sin datos",         hex: "#a79a82" },
+};
+
 // Layer currently driving the ribbon color and map marker color.
 // 'fog' -> classifyRisk()+RISK, 'ice' -> classifyIce()+ICE_RISK,
 // 'temp' -> classifyTemp()+TEMP_RISK, 'wind' -> classifyWind()+WIND_RISK.
 let activeLayer = 'fog';
 
 function currentLayerConfig() {
-  if (activeLayer === 'ice')  return { classify: classifyIce,  map: ICE_RISK };
-  if (activeLayer === 'temp') return { classify: classifyTemp, map: TEMP_RISK };
-  if (activeLayer === 'wind') return { classify: classifyWind, map: WIND_RISK };
-  if (activeLayer === 'alt')  return { classify: classifyAltitude, map: ALT_RISK };
+  if (activeLayer === 'ice')    return { classify: classifyIce,    map: ICE_RISK };
+  if (activeLayer === 'temp')   return { classify: classifyTemp,   map: TEMP_RISK };
+  if (activeLayer === 'wind')   return { classify: classifyWind,   map: WIND_RISK };
+  if (activeLayer === 'alt')    return { classify: classifyAltitude, map: ALT_RISK };
+  if (activeLayer === 'precip') return { classify: classifyPrecip, map: PRECIP_RISK };
   return { classify: classifyRisk, map: RISK };
 }
 
@@ -894,6 +909,20 @@ function classifyAltitude(point) {
   return 'b5';
 }
 
+// Snow takes priority over rain intensity — a light snowfall is a bigger
+// road hazard than the mm/h number alone would suggest.
+function classifyPrecip(point) {
+  const { precipitation, snowfall } = point;
+  if (snowfall != null && snowfall > 0) {
+    return snowfall >= 1 ? 'heavy_snow' : 'snow';
+  }
+  if (precipitation == null) return 'unknown';
+  if (precipitation <= 0) return 'clear';
+  if (precipitation < 2.5) return 'light';
+  if (precipitation < 7.6) return 'moderate';
+  return 'heavy';
+}
+
 async function fetchRoute(waypoints) {
   const coordStr = waypoints.map(w => `${w.lon},${w.lat}`).join(';');
   const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`;
@@ -955,7 +984,7 @@ async function fetchWeatherForPoints(points) {
   const lats = points.map(p => p.lat.toFixed(4)).join(',');
   const lons = points.map(p => p.lon.toFixed(4)).join(',');
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}` +
-    `&current=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m` +
+    `&current=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,precipitation,snowfall` +
     `&hourly=visibility` +
     `&forecast_days=1&timezone=auto`;
   const res = await fetch(url);
@@ -980,6 +1009,8 @@ async function fetchWeatherForPoints(points) {
       apparentTemp: r.current ? r.current.apparent_temperature : null,
       windSpeed: r.current ? r.current.wind_speed_10m : null,
       windGust: r.current ? r.current.wind_gusts_10m : null,
+      precipitation: r.current ? r.current.precipitation : null,
+      snowfall: r.current ? r.current.snowfall : null,
       altitude: typeof r.elevation === 'number' ? r.elevation : null,
       visibility
     };
@@ -1054,6 +1085,7 @@ function renderPoints(points) {
     const tempInfo = TEMP_RISK[classifyTemp(p)];
     const windInfo = WIND_RISK[classifyWind(p)];
     const altInfo = ALT_RISK[classifyAltitude(p)];
+    const precipInfo = PRECIP_RISK[classifyPrecip(p)];
 
     const seg = document.createElement('div');
     seg.className = 'ribbon-seg';
@@ -1081,6 +1113,7 @@ function renderPoints(points) {
         <span style="color:${iceInfo.hex}">🧊 ${iceInfo.label}</span>
         <span style="color:${tempInfo.hex}">🌡️ ${tempInfo.label}</span>
         <span style="color:${windInfo.hex}">💨 ${windInfo.label}</span>
+        <span style="color:${precipInfo.hex}">💧 ${precipInfo.label}</span>
       </div>
       <div class="popup-detail">
         <span>Temp: <b>${fmt(p.temp, '°C')}</b></span>
@@ -1089,10 +1122,12 @@ function renderPoints(points) {
         <span>Humedad: <b>${fmt(p.humidity, '%', 0)}</b></span>
         <span>Viento: <b>${fmt(p.windSpeed, 'km/h', 0)}</b></span>
         <span>Ráfagas: <b>${fmt(p.windGust, 'km/h', 0)}</b></span>
+        <span>Precip.: <b>${fmt(p.precipitation, 'mm', 1)}</b></span>
+        <span>Nieve: <b>${fmt(p.snowfall, 'cm', 1)}</b></span>
         <span>Visib.: <b>${visText}</b></span>
         <span>Altitud: <b>${p.altitude != null ? Math.round(p.altitude) + 'msnm' : '—'}</b></span>
       </div>
-    `, { maxWidth: 260, minWidth: 220, maxHeight: 320 });
+    `, { maxWidth: 260, minWidth: 220, maxHeight: 340 });
     markers.push(marker);
 
     const item = document.createElement('div');
@@ -1106,6 +1141,7 @@ function renderPoints(points) {
           <span class="risk-badge" style="background:${tempInfo.hex}22; color:${tempInfo.hex}; border:1px solid ${tempInfo.hex}55" title="Temperatura extrema">🌡️ ${tempInfo.label}</span>
           <span class="risk-badge" style="background:${windInfo.hex}22; color:${windInfo.hex}; border:1px solid ${windInfo.hex}55" title="Viento">💨 ${windInfo.label}</span>
           <span class="risk-badge" style="background:${altInfo.hex}22; color:${altInfo.hex}; border:1px solid ${altInfo.hex}55" title="Altitud">🏔️ ${altInfo.label}</span>
+          <span class="risk-badge" style="background:${precipInfo.hex}22; color:${precipInfo.hex}; border:1px solid ${precipInfo.hex}55" title="Precipitación">💧 ${precipInfo.label}</span>
         </span>
       </div>
       <div class="point-detail">
@@ -1115,6 +1151,8 @@ function renderPoints(points) {
         <span>Humedad: <b>${fmt(p.humidity, '%', 0)}</b></span>
         <span>Viento: <b>${fmt(p.windSpeed, 'km/h', 0)}</b></span>
         <span>Ráfagas: <b>${fmt(p.windGust, 'km/h', 0)}</b></span>
+        <span>Precip.: <b>${fmt(p.precipitation, 'mm', 1)}</b></span>
+        <span>Nieve: <b>${fmt(p.snowfall, 'cm', 1)}</b></span>
         <span>Visib.: <b>${visText}</b></span>
         <span>Altitud: <b>${p.altitude != null ? Math.round(p.altitude) + 'msnm' : '—'}</b></span>
       </div>
@@ -1266,6 +1304,7 @@ document.getElementById('layer-toggle').addEventListener('click', (e) => {
     layer === 'temp' ? 'Temperaturas extremas a lo largo del trayecto' :
     layer === 'wind' ? 'Viento a lo largo del trayecto' :
     layer === 'alt' ? 'Altitud a lo largo del trayecto' :
+    layer === 'precip' ? 'Precipitación a lo largo del trayecto' :
     'Riesgo de niebla a lo largo del trayecto';
   if (cache[activeRouteId]) {
     renderPoints(cache[activeRouteId].points);
