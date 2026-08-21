@@ -553,7 +553,7 @@
     <button class="layer-btn" data-layer="ice">🧊 Hielo</button>
     <button class="layer-btn" data-layer="temp">🌡️ Temp.</button>
     <button class="layer-btn" data-layer="wind">💨 Viento</button>
-    <button class="layer-btn" data-layer="alt">🏔️ Altitud</button>
+    <button class="layer-btn" data-layer="alt">🏔️ Alt.</button>
   </div>
   <div class="ribbon-label" id="ribbon-label">Riesgo de niebla a lo largo del trayecto</div>
   <div class="ribbon" id="ribbon"></div>
@@ -598,11 +598,13 @@ const ROUTES = [
   {
     id: 'rn7',
     number: 'RN7',
-    label: 'Buenos Aires ⇄ Mendoza',
+    label: 'Buenos Aires ⇄ Límite con Chile (Cristo Redentor)',
     waypoints: [
       { name: 'Buenos Aires', lat: -34.6037, lon: -58.3816 },
       { name: 'Junín',        lat: -34.5836, lon: -60.9720 },
       { name: 'Mendoza',      lat: -32.8908, lon: -68.8272 },
+      { name: 'Uspallata',    lat: -32.5928, lon: -69.3479 },
+      { name: 'Las Cuevas',   lat: -32.8283, lon: -69.9153 },
     ]
   },
   {
